@@ -52,7 +52,7 @@ class Client(object):
 
     def _log(self, message, debug=None, **params):
         display_log = self.debug
-        if debug is True or debug is False:
+        if debug is not None:
             display_log = debug
         if display_log:
             colored_message = colorclass.Color(message)
