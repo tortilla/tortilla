@@ -11,3 +11,9 @@ class Bunch(object):
                 self.__dict__[key] = Bunch(**value)
             else:
                 self.__dict__[key] = value
+
+    def __str__(self):
+        return str(self.__dict__)
+
+    def __repr__(self):
+        return self.__str__()

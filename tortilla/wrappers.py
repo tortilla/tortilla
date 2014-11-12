@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 
+import sys
 import os
 
 import colorclass
@@ -8,12 +9,13 @@ import requests
 from .utils import Bunch
 
 
-try:
-    # This should raise a `NameError` on Python 2
-    str
-except NameError:
-    # Replace the Python 3 `str` type with Python 2's `basestring` type
+_version = sys.version_info
+is_py2 = (_version[0] == 2)
+is_py3 = (_version[0] == 3)
+
+if is_py2:
     str = basestring
+# We've made an assumption that `str` will still exist in Py3+
 
 
 debug_messages = {
@@ -40,36 +42,62 @@ debug_messages = {
 }
 
 
-# Enable console colors for Windows if we're actually on Windows
 if os.name == 'nt':
+    # Enable console colors for Windows
     colorclass.Windows.enable()
 
 
 class Client(object):
+    """Wrapper around the most basic methods of the requests library."""
 
     def __init__(self, debug=False):
+        # TODO: Implement default headers functionality
         self.debug = debug
 
-    def _log(self, message, debug=None, **params):
+    def _log(self, message, debug=None, **kwargs):
+        """Outputs a colored and formatted message in the console
+        if the debug mode is activated.
+
+        :param message: the message that will be printed
+        :param debug: (optional) Overwrite of `Client.debug`
+        :param kwargs: (optional) Arguments that will be passed
+                       to the `str.format()` method
+        """
         display_log = self.debug
         if debug is not None:
             display_log = debug
         if display_log:
             colored_message = colorclass.Color(message)
-            print(colored_message.format(**params))
+            print(colored_message.format(**kwargs))
 
     def _request(self, method, url, path=(), params=None, headers=None,
-                 data=None, debug=None):
+                 data=None, debug=None, **kwargs):
+        """Requests a URL and returns a *Bunched* response.
+
+        :param method: The request method, e.g. 'get', 'post', etc.
+        :param url: The URL to request
+        :param path: (optional) Appended to the request URL. This can be
+                     either a string or a list which will be joined
+                     by forward slashes.
+        :param params: (optional) The URL parameters, also known as 'query'
+        :param headers:
+        :param data: (optional) Dictionary
+        :param debug: (optional) Overwrite of `Client.debug`
+        :param kwargs: (optional) Arguments that will be passed to
+                       the `requests.request` method
+        :return:
+        """
         if not isinstance(path, str):
-            path = '/'.join(path)
+            path = '/'.join(unicode(item) for item in path)
 
         url = url + path
 
         self._log(debug_messages['request'], debug,
-                  method=method.upper(), url=url, params=params,
+                  method=method.upper(), url=url, kwargs=params,
                   data=data)
 
-        r = requests.request(method, url, params=params, headers=headers, data=data)
+        r = requests.request(method, url, params=params, headers=headers,
+                             data=data, **kwargs)
 
         json_response = r.json()
 
