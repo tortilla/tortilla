@@ -123,6 +123,7 @@ class Wrap(object):
         self.part = part
         self.parent = parent or Client(debug=debug)
         self.headers = self.parent.headers
+        self.debug = debug
 
     def parts(self):
         try:
@@ -138,7 +139,7 @@ class Wrap(object):
         try:
             return self.__dict__[item]
         except KeyError:
-            return Wrap(item, self, self.parent.debug)
+            return Wrap(item, self, self.debug)
 
     def request(self, method, pk=None, **options):
         if not options.get('url'):
