@@ -10,8 +10,7 @@
 
         >>> import tortilla
         >>> github = tortilla.wrap('https://api.github.com')
-        >>> users = github('/users')
-        >>> redodo = users.get('redodo')
+        >>> redodo = github.users.get('redodo')
         >>> redodo.id
         2227416
 
@@ -19,6 +18,5 @@
     :license: MIT, see LICENSE for more details.
 """
 
-from . import utils
 from .api import wrap
-from .wrappers import Service, Endpoint
+from .wrappers import Wrap

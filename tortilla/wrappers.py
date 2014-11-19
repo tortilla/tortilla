@@ -3,10 +3,9 @@
 import sys
 import os
 
+import bunch
 import colorclass
 import requests
-
-from .utils import Bunch
 
 
 _version = sys.version_info
@@ -15,7 +14,7 @@ is_py3 = (_version[0] == 3)
 
 if is_py2:
     str = basestring
-# We've made an assumption that `str` will still exist in Py3+
+# We've made an assumption that `str` will still exist in future Python versions
 
 
 debug_messages = {
@@ -23,6 +22,7 @@ debug_messages = {
         '{blue}Executing {method} request:{/blue}\n'
         '{hiblack}'
         '    URL:   {url}\n'
+        '    headers: {headers}\n'
         '    query: {params}\n'
         '    data:  {data}\n'
         '{/hiblack}'
@@ -51,7 +51,7 @@ class Client(object):
     """Wrapper around the most basic methods of the requests library."""
 
     def __init__(self, debug=False):
-        # TODO: Implement default headers functionality
+        self.headers = bunch.Bunch()
         self.debug = debug
 
     def _log(self, message, debug=None, **kwargs):
@@ -70,7 +70,7 @@ class Client(object):
             colored_message = colorclass.Color(message)
             print(colored_message.format(**kwargs))
 
-    def _request(self, method, url, path=(), params=None, headers=None,
+    def request(self, method, url, path=(), params=None, headers=None,
                  data=None, debug=None, **kwargs):
         """Requests a URL and returns a *Bunched* response.
 
@@ -79,25 +79,30 @@ class Client(object):
         :param path: (optional) Appended to the request URL. This can be
                      either a string or a list which will be joined
                      by forward slashes.
-        :param params: (optional) The URL parameters, also known as 'query'
-        :param headers:
+        :param params: (optional) The URL query parameters
+        :param headers: (optional) Extra headers to sent with the request.
+                        Existing header keys can be overwritten.
         :param data: (optional) Dictionary
         :param debug: (optional) Overwrite of `Client.debug`
         :param kwargs: (optional) Arguments that will be passed to
                        the `requests.request` method
-        :return:
+        :return: :class:`Bunch` object from JSON-parsed response
         """
         if not isinstance(path, str):
-            path = '/'.join(unicode(item) for item in path)
+            path = '/'.join(item for item in path)
+
+        request_headers = dict(self.headers.__dict__)
+        if headers is not None:
+            request_headers.update(headers)
 
         url = url + path
 
         self._log(debug_messages['request'], debug,
-                  method=method.upper(), url=url, kwargs=params,
-                  data=data)
+                  method=method.upper(), url=url, headers=request_headers,
+                  params=params, data=data)
 
-        r = requests.request(method, url, params=params, headers=headers,
-                             data=data, **kwargs)
+        r = requests.request(method, url, params=params,
+                             headers=request_headers, data=data, **kwargs)
 
         json_response = r.json()
 
@@ -107,63 +112,52 @@ class Client(object):
                   status_code=r.status_code, reason=r.reason,
                   text=json_response)
 
-        return Bunch(**json_response)
-
-    def get(self, **options):
-        return self._request('get', **options)
-
-    def post(self, **options):
-        return self._request('post', **options)
-
-    def put(self, **options):
-        return self._request('put', **options)
-
-    def delete(self, **options):
-        return self._request('delete', **options)
+        try:
+            return bunch.Bunch(**json_response)
+        except TypeError:
+            return [bunch.Bunch(**item) for item in json_response]
 
 
-class Service(object):
-    def __init__(self, url, debug=False):
-        self.url = url
-        self.client = Client(debug=debug)
+class Wrap(object):
+    def __init__(self, part, parent=None, debug=False):
+        self.part = part
+        self.parent = parent or Client(debug=debug)
+        self.headers = self.parent.headers
 
-    def __call__(self, path, debug=None):
-        return Endpoint(self, path, debug)
+    def parts(self):
+        try:
+            return '/'.join([self.parent.parts(), self.part])
+        except AttributeError:
+            return self.part
 
-    def endpoint(self, path, debug=None):
-        return Endpoint(self, path, debug)
+    def __call__(self, part):
+        self.part = '/'.join([self.part, part])
+        return self
 
-    def get(self, **options):
-        return self.client.get(url=self.url, **options)
+    def __getattr__(self, item):
+        try:
+            return self.__dict__[item]
+        except KeyError:
+            return Wrap(item, self, self.parent.debug)
 
-    def post(self, **options):
-        return self.client.post(url=self.url, **options)
-
-    def put(self, **options):
-        return self.client.put(url=self.url, **options)
-
-    def delete(self, **options):
-        return self.client.delete(url=self.url, **options)
-
-
-class Endpoint(object):
-    def __init__(self, service, path, debug=None):
-        self.service = service
-        self.path = path
-        self.debug = debug
-
-    def get(self, pk, **options):
+    def request(self, method, pk=None, **options):
+        if not options.get('url'):
+            options['url'] = '/'.join([self.parts(), unicode(pk)]) \
+                if pk else self.parts()
         options.setdefault('debug', self.debug)
-        return self.service.get(path=[self.path, pk], **options)
+        return self.parent.request(method=method, **options)
 
-    def post(self, data, **options):
-        options.setdefault('debug', self.debug)
-        return self.service.post(path=self.path, data=data, **options)
+    def get(self, pk=None, **options):
+        return self.request('get', pk, **options)
 
-    def put(self, pk, data, **options):
-        options.setdefault('debug', self.debug)
-        return self.service.put(path=[self.path, pk], data=data, **options)
+    def post(self, pk=None, **options):
+        return self.request('post', pk, **options)
 
-    def delete(self, pk, **options):
-        options.setdefault('debug', self.debug)
-        return self.service.delete(path=[self.path, pk], **options)
+    def put(self, pk=None, **options):
+        return self.request('put', pk, **options)
+
+    def patch(self, pk=None, **options):
+        return self.request('patch', pk, **options)
+
+    def delete(self, pk=None, **options):
+        return self.request('delete', pk, **options)
