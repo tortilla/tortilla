@@ -15,4 +15,4 @@ Usage::
     >>> redodo.id
     2227416
 
-..note:: This package is still in development
+*This package is still in development*
