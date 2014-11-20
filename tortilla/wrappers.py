@@ -95,6 +95,9 @@ class Client(object):
         if headers is not None:
             request_headers.update(headers)
 
+        if debug is None:
+            debug = self.debug
+
         url = url + path
 
         self._log(debug_messages['request'], debug,
@@ -112,18 +115,15 @@ class Client(object):
                   status_code=r.status_code, reason=r.reason,
                   text=json_response)
 
-        try:
-            return bunch.Bunch(**json_response)
-        except TypeError:
-            return [bunch.Bunch(**item) for item in json_response]
+        return bunch.bunchify(json_response)
 
 
 class Wrap(object):
-    def __init__(self, part, parent=None, headers=None, debug=False):
+    def __init__(self, part, parent=None, headers=None, debug=None):
         self.part = part
         self.__parts = None
         self.parent = parent or Client(debug=debug)
-        self.headers = headers or {}
+        self.headers = bunch.bunchify(headers) if headers else bunch.Bunch()
         self.debug = debug
 
     def parts(self):
@@ -142,14 +142,16 @@ class Wrap(object):
         try:
             return self.__dict__[part]
         except KeyError:
-            self.__dict__[part] = Wrap(part, self, self.debug, **options)
+            self.__dict__[part] = Wrap(part=part, parent=self,
+                                       debug=self.debug, **options)
             return self.__dict__[part]
 
     def __getattr__(self, part):
         try:
             return self.__dict__[part]
         except KeyError:
-            self.__dict__[part] = Wrap(part, self, self.debug)
+            self.__dict__[part] = Wrap(part=part, parent=self,
+                                       debug=self.debug)
             return self.__dict__[part]
 
     def request(self, method, pk=None, **options):
@@ -157,6 +159,10 @@ class Wrap(object):
             options['url'] = '/'.join([self.parts(), unicode(pk)]) \
                 if pk else self.parts()
         options.setdefault('debug', self.debug)
+        headers = self.headers.copy()
+        if options.get('headers'):
+            headers.update(options['headers'])
+        options['headers'] = headers
         return self.parent.request(method=method, **options)
 
     def get(self, pk=None, **options):

@@ -5,4 +5,4 @@ from . import wrappers
 
 def wrap(url, debug=False):
     """Syntax sugar for creating service wrappers."""
-    return wrappers.Wrap(url, debug)
+    return wrappers.Wrap(part=url, debug=debug)
