@@ -119,27 +119,38 @@ class Client(object):
 
 
 class Wrap(object):
-    def __init__(self, part, parent=None, debug=False):
+    def __init__(self, part, parent=None, headers=None, debug=False):
         self.part = part
+        self.__parts = None
         self.parent = parent or Client(debug=debug)
-        self.headers = self.parent.headers
+        self.headers = headers or {}
         self.debug = debug
 
     def parts(self):
+        if self.__parts:
+            return self.__parts
         try:
-            return '/'.join([self.parent.parts(), self.part])
+            self.__parts = '/'.join([self.parent.parts(), self.part])
         except AttributeError:
-            return self.part
+            self.__parts = self.part
+        return self.__parts
 
-    def __call__(self, part):
-        self.part = '/'.join([self.part, part])
-        return self
-
-    def __getattr__(self, item):
+    def __call__(self, part=None, **options):
+        if not part:
+            self.__dict__.update(**options)
+            return self
         try:
-            return self.__dict__[item]
+            return self.__dict__[part]
         except KeyError:
-            return Wrap(item, self, self.debug)
+            self.__dict__[part] = Wrap(part, self, self.debug, **options)
+            return self.__dict__[part]
+
+    def __getattr__(self, part):
+        try:
+            return self.__dict__[part]
+        except KeyError:
+            self.__dict__[part] = Wrap(part, self, self.debug)
+            return self.__dict__[part]
 
     def request(self, method, pk=None, **options):
         if not options.get('url'):
@@ -162,3 +173,6 @@ class Wrap(object):
 
     def delete(self, pk=None, **options):
         return self.request('delete', pk, **options)
+
+    def __repr__(self):
+        return "<{} for {}>".format(self.__class__.__name__, self.parts())

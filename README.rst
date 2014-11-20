@@ -3,6 +3,10 @@ Tortilla
 
 A tiny Python library for creating wrappers around external APIs.
 
+Installation::
+
+    pip install --pre tortilla
+
 Usage::
 
     >>> import tortilla
@@ -10,3 +14,5 @@ Usage::
     >>> redodo = github.users.get('redodo')
     >>> redodo.id
     2227416
+
+..note:: This package is still in development
