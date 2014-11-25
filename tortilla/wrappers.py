@@ -234,7 +234,7 @@ class Wrap(object):
             if pk:
                 options['url'] = '/'.join([self.parts(), to_unicode(pk)])
             else:
-                self.parts()
+                options['url'] = self.parts()
 
         if self.debug is not None:
             options.setdefault('debug', self.debug)
