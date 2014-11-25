@@ -42,7 +42,6 @@ debug_messages = {
 
 
 if os.name == 'nt':
-    # enable console colors for Windows
     colorclass.Windows.enable()
 
 
