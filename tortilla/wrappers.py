@@ -106,18 +106,18 @@ class Client(object):
 
         url = url + path
 
+        self._log(debug_messages['request'], debug,
+                  method=method.upper(), url=url, headers=request_headers,
+                  params=params, data=data)
+
         cache_key = (url, str(params), str(headers))
         if cache_key in self.cache:
             item = self.cache[cache_key]
             if item['expires'] > time.time():
-                self._log(debug_messages['cached_response'],
+                self._log(debug_messages['cached_response'], debug,
                           text=item['value'])
                 return bunch.bunchify(item['value'])
             del self.cache[cache_key]
-
-        self._log(debug_messages['request'], debug,
-                  method=method.upper(), url=url, headers=request_headers,
-                  params=params, data=data)
 
         r = requests.request(method, url, params=params,
                              headers=request_headers, data=data, **kwargs)
@@ -237,8 +237,10 @@ class Wrap(object):
             else:
                 self.parts()
 
-        options.setdefault('debug', self.debug)
-        options.setdefault('cache_lifetime', self.cache_lifetime)
+        if self.debug is not None:
+            options.setdefault('debug', self.debug)
+        if self.cache_lifetime is not None:
+            options.setdefault('cache_lifetime', self.cache_lifetime)
 
         # headers are copied into a new object so temporary
         # custom headers aren't overriding future requests
