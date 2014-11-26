@@ -11,6 +11,22 @@ import tortilla
 import six
 
 
+def monkey_patch_httpretty():
+    # HTTPretty decodes unicode strings before passing them to the
+    # `quote` method of `urllib`. On Python 2, this can cause KeyErrors
+    # when the string contains unicode. To prevent this, we encode the
+    # string so urllib can safely quote it.
+    from httpretty.core import url_fix
+    def fixed_url_fix(s, charset='utf-8'):
+        return url_fix(s.encode(charset), charset)
+    httpretty.core.url_fix = fixed_url_fix
+
+
+from tortilla.compat import is_py2
+if is_py2:
+    monkey_patch_httpretty()
+
+
 API_URL = 'https://test.tortilla.locally'
 api = tortilla.wrap(API_URL)
 
