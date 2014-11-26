@@ -1,6 +1,8 @@
 Tortilla
 ========
 
+.. image:: https://travis-ci.org/redodo/tortilla.svg
+
 A tiny Python library for creating wrappers around external APIs.
 
 Installation::
