@@ -80,7 +80,7 @@ class Client(object):
 
     def request(self, method, url, path=(), params=None, headers=None,
                 data=None, debug=None, cache_lifetime=None, silent=False,
-                **kwargs):
+                overwrite_cache=False, **kwargs):
         """Requests a URL and returns a *Bunched* response.
 
         This method basically wraps the request method of the requests
@@ -120,7 +120,7 @@ class Client(object):
                   params=params, data=data)
 
         cache_key = (url, str(params), str(headers))
-        if cache_key in self.cache:
+        if cache_key in self.cache and not overwrite_cache:
             item = self.cache[cache_key]
             if item['expires'] > time.time():
                 self._log(debug_messages['cached_response'], debug,
@@ -171,21 +171,21 @@ class Wrap(object):
     def __init__(self, part, parent=None, headers=None, debug=None,
                  cache_lifetime=None, silent=False):
         self.part = part
-        self._parts = None
+        self._url = None
         self.parent = parent or Client(debug=debug)
         self.headers = bunch.bunchify(headers) if headers else bunch.Bunch()
         self.debug = debug
         self.cache_lifetime = cache_lifetime
         self.silent = silent
 
-    def parts(self):
-        if self._parts:
-            return self._parts
+    def url(self):
+        if self._url:
+            return self._url
         try:
-            self._parts = '/'.join([self.parent.parts(), self.part])
+            self._url = '/'.join([self.parent.url(), self.part])
         except AttributeError:
-            self._parts = self.part
-        return self._parts
+            self._url = self.part
+        return self._url
 
     def __call__(self, part=None, **options):
         """Creates and returns a new :class:`Wrap` object in the chain
@@ -254,9 +254,9 @@ class Wrap(object):
         if not options.get('url'):
             # if a primary key is given, it is joined with the requested URL
             if pk:
-                options['url'] = '/'.join([self.parts(), pk])
+                options['url'] = '/'.join([self.url(), pk])
             else:
-                options['url'] = self.parts()
+                options['url'] = self.url()
 
         if self.debug is not None:
             options.setdefault('debug', self.debug)
@@ -295,4 +295,4 @@ class Wrap(object):
         return self.request('delete', pk, **options)
 
     def __repr__(self):
-        return "<{} for {}>".format(self.__class__.__name__, self.parts())
+        return "<{} for {}>".format(self.__class__.__name__, self.url())
