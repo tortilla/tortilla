@@ -38,7 +38,16 @@ debug_messages = {
         '    {text}\n'
         '{/hiblack}'
     ),
+    'nojson_response': (
+        '{red}Got {status_code} {reason} (NOT JSON):{/red}\n'
+        '{hiblack}'
+        '    {text}\n'
+        '{/hiblack}'
+    )
 }
+
+
+DEBUG_MAX_TEXT_LENGTH = 100
 
 
 if os.name == 'nt':
@@ -70,7 +79,8 @@ class Client(object):
             print((colored_message.format(**kwargs)))
 
     def request(self, method, url, path=(), params=None, headers=None,
-                data=None, debug=None, cache_lifetime=None, **kwargs):
+                data=None, debug=None, cache_lifetime=None, silent=False,
+                **kwargs):
         """Requests a URL and returns a *Bunched* response.
 
         This method basically wraps the request method of the requests
@@ -121,7 +131,18 @@ class Client(object):
         r = requests.request(method, url, params=params,
                              headers=request_headers, data=data, **kwargs)
 
-        json_response = r.json()
+        try:
+            json_response = r.json()
+        except ValueError as e:
+            if len(r.text) > DEBUG_MAX_TEXT_LENGTH:
+                text = r.text[:DEBUG_MAX_TEXT_LENGTH] + '...'
+            else:
+                text = r.text
+            self._log(debug_messages['nojson_response'], debug,
+                      status_code=r.status_code, reason=r.reason, text=text)
+            if silent:
+                return None
+            raise e
 
         if cache_lifetime > 0 and method.lower() == 'get':
             self.cache[cache_key] = {'expires': time.time() + cache_lifetime,
@@ -148,13 +169,14 @@ class Wrap(object):
     """
 
     def __init__(self, part, parent=None, headers=None, debug=None,
-                 cache_lifetime=None):
+                 cache_lifetime=None, silent=False):
         self.part = part
         self._parts = None
         self.parent = parent or Client(debug=debug)
         self.headers = bunch.bunchify(headers) if headers else bunch.Bunch()
         self.debug = debug
         self.cache_lifetime = cache_lifetime
+        self.silent = silent
 
     def parts(self):
         if self._parts:
@@ -240,6 +262,8 @@ class Wrap(object):
             options.setdefault('debug', self.debug)
         if self.cache_lifetime is not None:
             options.setdefault('cache_lifetime', self.cache_lifetime)
+        if self.silent is not None:
+            options.setdefault('silent', self.silent)
 
         # headers are copied into a new object so temporary
         # custom headers aren't overriding future requests

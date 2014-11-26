@@ -3,6 +3,6 @@
 from . import wrappers
 
 
-def wrap(url, debug=False, cache_lifetime=None):
+def wrap(url, **options):
     """Syntax sugar for creating service wrappers."""
-    return wrappers.Wrap(part=url, debug=debug, cache_lifetime=cache_lifetime)
+    return wrappers.Wrap(part=url, **options)
