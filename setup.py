@@ -39,5 +39,6 @@ setup(
         'lunch',
         'colorclass',
         'requests',
+        'httpretty',
     ],
 )
