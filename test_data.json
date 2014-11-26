@@ -1,0 +1,13 @@
+{
+  "endpoints": {
+    "/nojson": {
+      "body": "This is not a JSON response."
+    },
+    "/user/jimmy": {
+      "body": {"age": 10, "name": "Jimmy", "interest": "Computer games"}
+    },
+    "/user/имя": {
+      "body": {"age": 9, "name": "имя", "interest": "Vodka"}
+    }
+  }
+}
