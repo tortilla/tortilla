@@ -14,5 +14,3 @@ Usage::
     >>> redodo = github.users.get('redodo')
     >>> redodo.id
     2227416
-
-*This package is still in development*

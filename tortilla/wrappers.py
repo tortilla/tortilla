@@ -7,7 +7,7 @@ import bunch
 import colorclass
 import requests
 
-from .compat import string_type, to_unicode
+from .compat import string_type
 
 
 debug_messages = {
@@ -144,7 +144,7 @@ class Client(object):
                 return None
             raise e
 
-        if cache_lifetime > 0 and method.lower() == 'get':
+        if cache_lifetime and cache_lifetime > 0 and method.lower() == 'get':
             self.cache[cache_key] = {'expires': time.time() + cache_lifetime,
                                      'value': json_response}
 
@@ -254,7 +254,7 @@ class Wrap(object):
         if not options.get('url'):
             # if a primary key is given, it is joined with the requested URL
             if pk:
-                options['url'] = '/'.join([self.parts(), to_unicode(pk)])
+                options['url'] = '/'.join([self.parts(), pk])
             else:
                 options['url'] = self.parts()
 
