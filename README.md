@@ -1,8 +1,9 @@
 Tortilla
 ========
 
-[<img src="http://img.shields.io/travis/redodo/tortilla.svg?style=flat">](https://travis-ci.org/redodo/tortilla)
-[<img src="http://img.shields.io/pypi/v/tortilla.svg?style=flat">](https://pypi.python.org/pypi/tortilla)
+[<img src="https://img.shields.io/travis/redodo/tortilla.svg?style=flat">](https://travis-ci.org/redodo/tortilla)
+[<img src="https://img.shields.io/coveralls/redodo/tortilla.svg?style=flat">](https://coveralls.io/r/redodo/tortilla)
+[<img src="https://img.shields.io/pypi/v/tortilla.svg?style=flat">](https://pypi.python.org/pypi/tortilla)
 [<img src="https://pypip.in/py_versions/tortilla/badge.svg?style=flat">](https://pypi.python.org/pypi/tortilla)
 
 Wrapping web APIs made easy.

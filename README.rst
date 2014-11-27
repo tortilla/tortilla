@@ -2,12 +2,15 @@
 Tortilla
 ========
 
-|Build Status| |Version| |Python Versions|
+|Build Status| |Coverage| |Version| |Python Versions|
 
-.. |Build Status| image:: http://img.shields.io/travis/redodo/tortilla.svg?style=flat
+.. |Build Status| image:: https://img.shields.io/travis/redodo/tortilla.svg?style=flat
     :target: https://travis-ci.org/redodo/tortilla
     :alt: Build Status
-.. |Version| image:: http://img.shields.io/pypi/v/tortilla.svg?style=flat
+.. |Coverage| image:: https://img.shields.io/coveralls/redodo/tortilla.svg?style=flat
+    :target: https://coveralls.io/r/redodo/tortilla
+    :alt: Coverage
+.. |Version| image:: https://img.shields.io/pypi/v/tortilla.svg?style=flat
     :target: https://pypi.python.org/pypi/tortilla
     :alt: Version
 .. |Python Versions| image:: https://pypip.in/py_versions/tortilla/badge.svg?style=flat

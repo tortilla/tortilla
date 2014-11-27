@@ -5,5 +5,8 @@ python:
   - "3.2"
   - "3.3"
   - "3.4"
-install: "pip install -r requirements.txt"
-script: python test_tortilla.py
+install:
+  - "pip install -r requirements.txt"
+  - "pip install coveralls"
+script: coverage run --source=tortilla test_tortilla.py
+after_success: coveralls
