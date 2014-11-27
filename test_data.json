@@ -8,6 +8,22 @@
     },
     "/user/имя": {
       "body": {"age": 9, "name": "имя", "interest": "Vodka"}
+    },
+    "/awesome/tweet": {
+      "method": "POST",
+      "body": {"message": "Success!"}
+    },
+    "/cash/money": {
+      "method": "PUT",
+      "body": {"message": "Success!"}
+    },
+    "/windows/ssh": {
+      "method": "PATCH",
+      "body": {"message": "Success!"}
+    },
+    "/world/hunger": {
+      "method": "DELETE",
+      "body": {"message": "Success!"}
     }
   }
 }

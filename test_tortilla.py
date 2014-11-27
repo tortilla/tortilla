@@ -82,6 +82,30 @@ class TestTortilla(unittest.TestCase):
         time.sleep(0.5)
         assert api.cache.get() == "this should not be returned"
 
+    def test_request_methods(self):
+        assert api.awesome.tweet.post().message == "Success!"
+        assert api.cash.money.put().message == "Success!"
+        assert api.windows.ssh.patch().message == "Success!"
+        assert api.world.hunger.delete().message == "Success!"
+
+    def test_wrap_config(self):
+        api.stuff(debug=True, extension='json', cache_lifetime=5, silent=True)
+        assert api.stuff.debug
+        assert api.stuff.extension == 'json'
+        assert api.stuff.cache_lifetime == 5
+        assert api.stuff.silent
+        api.stuff(debug=False, extension='xml', cache_lifetime=8, silent=False)
+        assert not api.stuff.debug
+        assert api.stuff.extension == 'xml'
+        assert api.stuff.cache_lifetime == 8
+        assert not api.stuff.silent
+
+    def test_wrap_chain(self):
+        assert api.chained.wrap.stuff is api('chained').wrap('stuff')
+        assert api.more.chaining.stuff is api.more('chaining')('stuff')
+        assert api.more is api.more.chaining.parent
+        assert api('expert/chaining/stuff') is not api.expert.chaining.stuff
+
 
 if __name__ == '__main__':
     httpretty.enable()
