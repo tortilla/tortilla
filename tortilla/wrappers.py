@@ -78,7 +78,7 @@ class Client(object):
             colored_message = colorclass.Color(message)
             print((colored_message.format(**kwargs)))
 
-    def request(self, method, url, path=(), extension='', params=None,
+    def request(self, method, url, path=(), extension=None, params=None,
                 headers=None, data=None, debug=None, cache_lifetime=None,
                 silent=False, ignore_cache=False, **kwargs):
         """Requests a URL and returns a *Bunched* response.

@@ -106,7 +106,7 @@ This can be overwritten per request or URL part:
 
 .. code:: python
 
-    api.special.case(extension='json')
+    api.special.case.extension = 'json'
     api.special.case.stuff.get()
     # requests: https://api.example.org/special/case/stuff.json
 
