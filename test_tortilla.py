@@ -78,7 +78,7 @@ class TestTortilla(unittest.TestCase):
     def test_cached_response(self):
         api.cache.get(cache_lifetime=100)
         assert api.cache.get() == "cache this response"
-        api.cache.get(cache_lifetime=0.25, overwrite_cache=True)
+        api.cache.get(cache_lifetime=0.25, ignore_cache=True)
         time.sleep(0.5)
         assert api.cache.get() == "this should not be returned"
 

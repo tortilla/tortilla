@@ -78,9 +78,9 @@ class Client(object):
             colored_message = colorclass.Color(message)
             print((colored_message.format(**kwargs)))
 
-    def request(self, method, url, path=(), params=None, headers=None,
-                data=None, debug=None, cache_lifetime=None, silent=False,
-                overwrite_cache=False, **kwargs):
+    def request(self, method, url, path=(), extension='', params=None,
+                headers=None, data=None, debug=None, cache_lifetime=None,
+                silent=False, ignore_cache=False, **kwargs):
         """Requests a URL and returns a *Bunched* response.
 
         This method basically wraps the request method of the requests
@@ -113,14 +113,19 @@ class Client(object):
         if debug is None:
             debug = self.debug
 
-        url = url + path
+        if extension is None:
+            extension = ''
+        elif not extension.startswith('.'):
+            extension = '.' + extension
+
+        url = url + path + extension
 
         self._log(debug_messages['request'], debug,
                   method=method.upper(), url=url, headers=request_headers,
                   params=params, data=data)
 
         cache_key = (url, str(params), str(headers))
-        if cache_key in self.cache and not overwrite_cache:
+        if cache_key in self.cache and not ignore_cache:
             item = self.cache[cache_key]
             if item['expires'] > time.time():
                 self._log(debug_messages['cached_response'], debug,
@@ -169,7 +174,7 @@ class Wrap(object):
     """
 
     def __init__(self, part, parent=None, headers=None, debug=None,
-                 cache_lifetime=None, silent=False):
+                 cache_lifetime=None, silent=False, extension=None):
         self.part = part
         self._url = None
         self.parent = parent or Client(debug=debug)
@@ -177,6 +182,7 @@ class Wrap(object):
         self.debug = debug
         self.cache_lifetime = cache_lifetime
         self.silent = silent
+        self.extension = extension
 
     def url(self):
         if self._url:
@@ -264,6 +270,8 @@ class Wrap(object):
             options.setdefault('cache_lifetime', self.cache_lifetime)
         if self.silent is not None:
             options.setdefault('silent', self.silent)
+        if self.extension is not None:
+            options.setdefault('extension', self.extension)
 
         # headers are copied into a new object so temporary
         # custom headers aren't overriding future requests
