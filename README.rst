@@ -31,7 +31,7 @@ It's aimed to be as pythonic and intuitive as possible.
 
 Install the pre-release via PIP::
 
-    pip install --pre tortilla
+    pip install tortilla
 
 Quick usage overview::
 
