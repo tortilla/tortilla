@@ -13,7 +13,7 @@ Tortilla
 Tortilla has all the required features built in to interface with a web
 API. It's aimed to be as pythonic and intuitive as possible.
 
-Installation via PIP::
+Installation via PIP:
 
 ```bash
 pip install tortilla
