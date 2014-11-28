@@ -29,7 +29,7 @@ Tortilla
 Tortilla has all the required features built in to interface with a web API.
 It's aimed to be as pythonic and intuitive as possible.
 
-Install the pre-release via PIP::
+Installation via PIP::
 
     pip install tortilla
 
