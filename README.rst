@@ -2,7 +2,7 @@
 Tortilla
 ========
 
-|Build Status| |Coverage| |Version| |Python Versions|
+|Build Status| |Coverage| |Docs| |Version| |Python Versions| |License|
 
 .. |Build Status| image:: https://img.shields.io/travis/redodo/tortilla.svg?style=flat
     :target: https://travis-ci.org/redodo/tortilla
@@ -10,96 +10,113 @@ Tortilla
 .. |Coverage| image:: https://img.shields.io/coveralls/redodo/tortilla.svg?style=flat
     :target: https://coveralls.io/r/redodo/tortilla
     :alt: Coverage
+.. |Docs| image:: https://readthedocs.org/projects/tortilla/badge/?version=latest&style=flat
+    :target: https://tortilla.readthedocs.org/latest/
+    :alt: Docs
 .. |Version| image:: https://img.shields.io/pypi/v/tortilla.svg?style=flat
     :target: https://pypi.python.org/pypi/tortilla
     :alt: Version
 .. |Python Versions| image:: https://pypip.in/py_versions/tortilla/badge.svg?style=flat
     :target: https://pypi.python.org/pypi/tortilla
     :alt: Python versions
+.. |License| image:: https://img.shields.io/pypi/l/tortilla.svg?style=flat
+    :target: https://github.com/redodo/tortilla/blob/master/LICENSE
+    :alt: License
 
-Wrapping web APIs made easy.
 
-Installation::
+*Wrapping web APIs made easy.*
+
+Tortilla has all the required features built in to interface with a web API.
+It's aimed to be as pythonic and intuitive as possible.
+
+Install the pre-release via PIP::
 
     pip install --pre tortilla
 
-Quick usage::
+Quick usage overview::
 
     >>> import tortilla
     >>> github = tortilla.wrap('https://api.github.com')
-    >>> redodo = github.users.get('redodo')
-    >>> redodo.id
-    2227416
+    >>> u = github.users.get('octocat')
+    >>> u.location
+    u'San Francisco'
 
-Intro
------
 
-In the following examples we can assume that the following code is
-already executed::
+Wrapping APIs
+~~~~~~~~~~~~~
+
+Let's say we want to wrap the following API url::
+
+    https://api.example.org
+
+Wrapping it with Tortilla is easy::
 
     import tortilla
     api = tortilla.wrap('https://api.example.org')
 
-Tortilla 101
-------------
+In the background this created a ``Wrap`` object which can be chained
+to other ``Wrap`` objects. Each Wrap represents a part of a URL. This
+means that we could do the following thing with our created wrapper::
 
-A quick overview of Tortilla's flow:
+    latest_news = api.news.latest.get()
+    # GET https://api.example.org/news/latest
+    #     |---------Wrap---------|Wrap|-Wrap-|
 
-1. You form a chain of URL parts
-2. You invoke a ``get``, ``post``, ``patch``, ``put`` or ``delete``
-   method at the end of the chain
-3. Tortilla requests the URL
-4. Tortilla tries to JSON decode to response and puts it in a ``Bunch``
-   object (dictionary accessible via dots)
-5. Tortilla returns the *bunched* object
+In this example, we've chained three Wraps together to form a URL. At the
+end of the chain we invoked the ``get`` method. This could be one of
+these HTTP methods: ``get``, ``post``, ``put``, ``patch`` or ``delete``.
+Tortilla will then execute the request and parse the response. At the moment
+only JSON responses will be parsed.
+
+When the response was parsed successfully, Tortilla will *bunchify*
+the data so it's accessible via attributes and keys. For example:
+``news['meta']['views']`` can be: ``news.meta.views``, but both will work.
+
 
 Headers
--------
+~~~~~~~
 
-Most APIs require a authentication token before you can access its
-endpoints.
+You can optionally pass different headers to each request::
 
-Those can be set in the headers of a wrapped object::
+    latest_news = api.news.latest.get(headers={'token': 'not so secret'})
 
-    api.headers.token = 'super secret token'
+If a header is recurring at every request (like authentication tokens) you can
+set them in one of the Wrap objects::
 
-Or if you first need to login before getting a token::
+    api.headers.token = 'not so secret'
+    latest_news = api.news.latest.get()
 
-    auth = api.auth.post(data={'username': 'foo', 'password': 'bar'})
-    api.headers.token = auth.token
+Sub-wraps will overload settings from parent-wraps. So every Wrap under
+``api`` will have the ``'token': 'not so secret'`` header by default.
 
-If the header key contains a dot or is a reserved keyword you can use
-the key instead of the attribute::
-
-    api.headers['from'] = 'stuff'
-    api.headers['secret.key'] = 'more stuff'
 
 Caching
--------
+~~~~~~~
 
-Caching stuff is easy::
+Sometimes you can have request limits on an API.
+In these cases, caching can be very helpful. You can activate this with
+the ``cache_lifetime`` parameter::
 
-    api.cache_lifetime = 3600  # seconds
-    # OR
-    api = tortilla.wrap('https://api.example.org', cache_lifetime=3600)
+    api = tortilla.wrap('https://api.example.org', cache_lifetime=100)  # seconds
 
-If you want to ignore the cache and force a reload::
+All the requests made on this Wrap will now be cached for 100 seconds. If you
+want to ignore the cache in a specific instance, you can use the
+``ignore_cache`` parameter::
 
-    api.some.endpoint.get(ignore_cache=True)
+    api.special.request.get(ignore_cache=True)
+
+The response will now be reloaded.
+
 
 URL Extensions
---------------
+~~~~~~~~~~~~~~
 
-If the endpoints of your target API require an extension for the
-response formatting you can set the ``extension`` parameter::
+APIs like Twitter's require an extension in the URL that specifies the
+formatting type. This can be defined in the ``extension`` parameter::
 
-    api.extension = 'json'
-    # OR
-    api = tortilla.wrap('https://api.example.org', extension='json')
+    api = tortilla.wrap('https://api.twitter.com/1.1', extension='json')
 
-This can be overwritten per request or URL part::
+Again, this can be overridden for every sub-wrap or request.
 
-    api.special.case.extension = 'json'
-    api.special.case.stuff.get()
-    # requests: https://api.example.org/special/case/stuff.json
 
+*Enjoy your data.*
