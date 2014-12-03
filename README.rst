@@ -1,6 +1,6 @@
-========
 Tortilla
 ========
+
 
 |Build Status| |Coverage| |Docs| |Version| |Python Versions| |License|
 
@@ -26,82 +26,108 @@ Tortilla
 
 *Wrapping web APIs made easy.*
 
-Tortilla has all the required features built in to interface with a web API.
-It's aimed to be as pythonic and intuitive as possible.
 
 Installation via PIP::
 
     pip install tortilla
 
+
 Quick usage overview::
 
     >>> import tortilla
     >>> github = tortilla.wrap('https://api.github.com')
-    >>> u = github.users.get('octocat')
-    >>> u.location
+    >>> user = github.users.get('octocat')
+    >>> user.location
     u'San Francisco'
 
 
-Wrapping APIs
-~~~~~~~~~~~~~
+The Basics
+~~~~~~~~~~
 
-Let's say we want to wrap the following API url::
+Tortilla uses a bit of magic to wrap APIs. Whenever you get or call an
+attribute of a wrapper, the URL is appended by that attribute's name or
+method parameter. Let's say we have the following code::
 
-    https://api.example.org
-
-Wrapping it with Tortilla is easy::
-
-    import tortilla
+    id, count = 71, 20
     api = tortilla.wrap('https://api.example.org')
+    api.video(id).comments.get(count)
 
-In the background this created a ``Wrap`` object which can be chained
-to other ``Wrap`` objects. Each Wrap represents a part of a URL. This
-means that we could do the following thing with our created wrapper::
+Every attribute and method call represents a part of the URL::
 
-    latest_news = api.news.latest.get()
-    # GET https://api.example.org/news/latest
-    #     |---------Wrap---------|Wrap|-Wrap-|
+    api         -> https://api.example.org
+    .video      -> /video
+    (id)        -> /71
+    .comments   -> /comments
+    .get(count) -> /20
+    Final URL   -> https://api.example.org/video/71/comments/20
 
-In this example, we've chained three Wraps together to form a URL. At the
-end of the chain we invoked the ``get`` method. This could be one of
-these HTTP methods: ``get``, ``post``, ``put``, ``patch`` or ``delete``.
-Tortilla will then execute the request and parse the response. At the moment
-only JSON responses will be parsed.
+The last part of the chain (``.get()``) executes the request. It also
+(optionally) appends one last part to the URL. Which allows you to do
+stuff like this::
 
-When the response was parsed successfully, Tortilla will *bunchify*
-the data so it's accessible via attributes and keys. For example:
-``news['meta']['views']`` can be: ``news.meta.views``, but both will work.
+    api.video.get(id)
+    # instead of this
+    api.video(id).get()
+
+So to summarize, getting attributes is used to define static parts of a
+URL and calling them is used to define dynamic parts of a URL.
+
+Once you've chained everything together, Tortilla will execute the
+request and parse the response for you.
+
+At the moment, Tortilla only accepts JSON-formatted responses.
+Supporting more formats is on the roadmap for future Tortilla versions.
+
+The parsed response will be *bunchified* which makes dictionary keys
+accessible through attributes. So, say we get the following JSON
+response for the user 'john'::
+
+    {"name": "John Doe"}
+
+If we request this with an already created wrapper, we can access the
+response data through attributes::
+
+    >>> user = api.users.get('john')
+    >>> user.name
+    u'John Doe'
 
 
 Headers
 ~~~~~~~
 
-You can optionally pass different headers to each request::
+A common requirement for accessing APIs is providing authentication
+data. This usually has to be described in the headers of each request.
+Tortilla makes it very easy for you to describe those recurring headers::
 
-    latest_news = api.news.latest.get(headers={'token': 'not so secret'})
+    api.headers.token = 'secret authentication token'
 
-If a header is recurring at every request (like authentication tokens) you can
-set them in one of the Wrap objects::
+You can also define custom headers per request::
 
-    api.headers.token = 'not so secret'
-    latest_news = api.news.latest.get()
+    api.endpoint.get(headers={'this': 'that'})
 
-Sub-wraps will overload settings from parent-wraps. So every Wrap under
-``api`` will have the ``'token': 'not so secret'`` header by default.
+These headers will be appended to the existing headers of the wrapper.
+
+
+Parameters
+~~~~~~~~~~
+
+URL parameters can be defined per request in the ``params`` option::
+
+    api.search.get(params={'q': 'search query'})
 
 
 Caching
 ~~~~~~~
 
-Sometimes you can have request limits on an API.
-In these cases, caching can be very helpful. You can activate this with
-the ``cache_lifetime`` parameter::
+Some APIs have a limit on the amount of requests you can make. In these
+cases, caching can be very helpful. You can activate this with the
+``cache_lifetime`` parameter::
 
-    api = tortilla.wrap('https://api.example.org', cache_lifetime=100)  # seconds
+    api = tortilla.wrap('https://api.example.org', cache_lifetime=100)
 
-All the requests made on this Wrap will now be cached for 100 seconds. If you
-want to ignore the cache in a specific instance, you can use the
-``ignore_cache`` parameter::
+All the requests made on this wrapper will now be cached for 100
+seconds. If you want to ignore the cache in a specific situation, you
+can use the ``ignore_cache`` parameter::
 
     api.special.request.get(ignore_cache=True)
 
@@ -112,11 +138,41 @@ URL Extensions
 ~~~~~~~~~~~~~~
 
 APIs like Twitter's require an extension in the URL that specifies the
-formatting type. This can be defined in the ``extension`` parameter::
+response format. This can be defined in the ``extension`` parameter::
 
     api = tortilla.wrap('https://api.twitter.com/1.1', extension='json')
 
-Again, this can be overridden for every sub-wrap or request.
+This option can be overridden with every request or subwrap::
+
+    api.special.endpoint.extension = 'xml'
+    api.special.endpoint.get(extension='xml')
+
+
+Debugging
+~~~~~~~~~
+
+Activating debug mode can be done with the ``debug`` parameter::
+
+    api.debug = True
+    # OR
+    api = tortilla.wrap('https://api.example.org', debug=True)
+
+You can override the ``debug`` parameter per request::
+
+    api.stuff.get(debug=False)
+    api.other.stuff.get(debug=True)
+
+An example using the GitHub API::
+
+    >>> user = github.users.get('octocat')
+    Executing GET request:
+        URL:     https://api.github.com/users/octocat
+        headers: {}
+        query:   None
+        data:    None
+
+    Got 200 OK:
+        {u'public_repos': 5, u'site_admin': ...
 
 
 *Enjoy your data.*
