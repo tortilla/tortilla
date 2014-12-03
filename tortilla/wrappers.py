@@ -183,7 +183,8 @@ class Wrap(object):
 
     def __init__(self, part, parent=None, headers=None, debug=None,
                  cache_lifetime=None, silent=False, extension=None):
-        self.part = part
+        # trailing slashes are removed
+        self.part = part[:-1] if part[-1:] == '/' else part
         self._url = None
         self.parent = parent or Client(debug=debug)
         self.headers = bunch.bunchify(headers) if headers else bunch.Bunch()

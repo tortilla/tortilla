@@ -74,6 +74,8 @@ class TestTortilla(unittest.TestCase):
         assert api.this('that').url() == API_URL + '/this/that'
         assert api('this')('that').url() == API_URL + '/this/that'
         assert api.user('имя').url() == API_URL + '/user/имя'
+        trailing_slash_api = tortilla.wrap(API_URL + '/')
+        assert trailing_slash_api.endpoint.url() == API_URL + '/endpoint'
 
     def test_cached_response(self):
         api.cache.get(cache_lifetime=100)
@@ -105,6 +107,9 @@ class TestTortilla(unittest.TestCase):
         assert api.more.chaining.stuff is api.more('chaining')('stuff')
         assert api.more is api.more.chaining.parent
         assert api('expert/chaining/stuff') is not api.expert.chaining.stuff
+
+    def test_debugging(self):
+        api.user.get('имя', debug=True)
 
 
 if __name__ == '__main__':
