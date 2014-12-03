@@ -311,5 +311,9 @@ class Wrap(object):
         """Executes a `DELETE` request on the currently formed URL."""
         return self.request('delete', pk, **options)
 
+    def head(self, pk=None, **options):
+        """Executes a `HEAD` request on the currently formed URL."""
+        return self.request('head', pk, **options)
+
     def __repr__(self):
         return "<{} for {}>".format(self.__class__.__name__, self.url())
