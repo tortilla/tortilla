@@ -14,10 +14,10 @@ debug_messages = {
     'request': (
         '{blue}Executing {method} request:{/blue}\n'
         '{hiblack}'
-        '    URL:   {url}\n'
+        '    URL:     {url}\n'
         '    headers: {headers}\n'
-        '    query: {params}\n'
-        '    data:  {data}\n'
+        '    query:   {params}\n'
+        '    data:    {data}\n'
         '{/hiblack}'
     ),
     'success_response': (
