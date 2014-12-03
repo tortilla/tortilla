@@ -8,6 +8,7 @@ import colorclass
 import requests
 
 from .compat import string_type
+from .utils import run_from_ipython
 
 
 debug_messages = {
@@ -51,7 +52,14 @@ DEBUG_MAX_TEXT_LENGTH = 100
 
 
 if os.name == 'nt':
-    colorclass.Windows.enable()
+    if run_from_ipython():
+        # IPython stops working properly when it loses control of
+        # `stdout` on Windows. In this case we won't enable Windows
+        # color support and we'll strip out all colors from the debug
+        # messages.
+        colorclass.disable_all_colors()
+    else:
+        colorclass.Windows.enable()
 
 
 class Client(object):
