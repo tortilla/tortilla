@@ -24,6 +24,10 @@
     "/world/hunger": {
       "method": "DELETE",
       "body": {"message": "Success!"}
+    },
+    "/another/test": {
+      "method": "HEAD",
+      "body": {"message": "Success!"}
     }
   }
 }

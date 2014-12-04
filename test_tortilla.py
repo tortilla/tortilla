@@ -89,6 +89,7 @@ class TestTortilla(unittest.TestCase):
         assert api.cash.money.put().message == "Success!"
         assert api.windows.ssh.patch().message == "Success!"
         assert api.world.hunger.delete().message == "Success!"
+        assert api.another.test.head().message == 'Success!'
 
     def test_wrap_config(self):
         api.stuff(debug=True, extension='json', cache_lifetime=5, silent=True)
