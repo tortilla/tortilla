@@ -26,7 +26,8 @@
       "body": {"message": "Success!"}
     },
     "/another/test": {
-      "method": "HEAD"
+      "method": "HEAD",
+      "body": ""
     }
   }
 }
