@@ -145,7 +145,11 @@ class Client(object):
                              headers=request_headers, data=data, **kwargs)
 
         try:
-            json_response = r.json()
+            has_body = len(r.text) > 0
+            if not has_body:
+                json_response = 'No response'
+            else:
+                json_response = r.json()
         except ValueError as e:
             if len(r.text) > DEBUG_MAX_TEXT_LENGTH:
                 text = r.text[:DEBUG_MAX_TEXT_LENGTH] + '...'
@@ -167,7 +171,9 @@ class Client(object):
                   status_code=r.status_code, reason=r.reason,
                   text=json_response)
 
-        return bunch.bunchify(json_response)
+        if has_body:
+            return bunch.bunchify(json_response)
+        return None
 
 
 class Wrap(object):

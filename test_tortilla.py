@@ -33,10 +33,11 @@ api = tortilla.wrap(API_URL)
 
 def register_urls(endpoints):
     for endpoint, options in six.iteritems(endpoints):
-        if isinstance(options['body'], (dict, list, tuple)):
-            body = json.dumps(options['body'])
+        if isinstance(options.get('body'), (dict, list, tuple)):
+            body = json.dumps(options.get('body'))
         else:
-            body = options['body']
+            body = options.get('body')
+        print(body, endpoint)
         httpretty.register_uri(method=options.get('method', 'GET'),
                                status=options.get('status', 200),
                                uri=API_URL + endpoint,
@@ -89,7 +90,7 @@ class TestTortilla(unittest.TestCase):
         assert api.cash.money.put().message == "Success!"
         assert api.windows.ssh.patch().message == "Success!"
         assert api.world.hunger.delete().message == "Success!"
-        assert api.another.test.head().message == 'Success!'
+        assert api.another.test.head() is None
 
     def test_wrap_config(self):
         api.stuff(debug=True, extension='json', cache_lifetime=5, silent=True)
