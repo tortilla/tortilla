@@ -11,7 +11,7 @@ Tortilla
 *Wrapping web APIs made easy.*
 
 
-Installation via PIP::
+Installation via PIP:
 
 ```bash
 pip install tortilla
