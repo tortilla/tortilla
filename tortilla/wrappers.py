@@ -145,7 +145,11 @@ class Client(object):
                              headers=request_headers, data=data, **kwargs)
 
         try:
-            json_response = r.json()
+            has_body = len(r.text) > 0
+            if not has_body:
+                json_response = 'No response'
+            else:
+                json_response = r.json()
         except ValueError as e:
             if len(r.text) > DEBUG_MAX_TEXT_LENGTH:
                 text = r.text[:DEBUG_MAX_TEXT_LENGTH] + '...'
@@ -167,7 +171,9 @@ class Client(object):
                   status_code=r.status_code, reason=r.reason,
                   text=json_response)
 
-        return bunch.bunchify(json_response)
+        if has_body:
+            return bunch.bunchify(json_response)
+        return None
 
 
 class Wrap(object):
@@ -183,8 +189,11 @@ class Wrap(object):
 
     def __init__(self, part, parent=None, headers=None, debug=None,
                  cache_lifetime=None, silent=False, extension=None):
-        # trailing slashes are removed
-        self.part = part[:-1] if part[-1:] == '/' else part
+        if isinstance(part, string_type):
+            # trailing slashes are removed
+            self.part = part[:-1] if part[-1:] == '/' else part
+        else:
+            self.part = str(part)
         self._url = None
         self.parent = parent or Client(debug=debug)
         self.headers = bunch.bunchify(headers) if headers else bunch.Bunch()
@@ -202,7 +211,7 @@ class Wrap(object):
             self._url = self.part
         return self._url
 
-    def __call__(self, part=None, **options):
+    def __call__(self, *parts, **options):
         """Creates and returns a new :class:`Wrap` object in the chain
         if `part` is provided. If not, the current object's options
         will be manipulated by the provided `options` ``dict`` and the
@@ -226,15 +235,24 @@ class Wrap(object):
         :param options: (optional) Arguments accepted by the
             :class:`Wrap` initializer
         """
-        if not part:
-            self.__dict__.update(**options)
+        self.__dict__.update(**options)
+
+        if len(parts) == 0:
             return self
-        try:
-            return self.__dict__[part]
-        except KeyError:
-            self.__dict__[part] = Wrap(part=part, parent=self,
-                                       debug=self.debug, **options)
-            return self.__dict__[part]
+
+        parent = self
+        for part in parts:
+            # check if a wrap is already created for the part
+            try:
+                # the next part in this loop will have this wrap as
+                # its parent
+                parent = parent.__dict__[part]
+            except KeyError:
+                # create a wrap for the part
+                parent.__dict__[part] = Wrap(part=part, parent=parent)
+                parent = parent.__dict__[part]
+
+        return parent
 
     def __getattr__(self, part):
         try:
