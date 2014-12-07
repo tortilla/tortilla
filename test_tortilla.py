@@ -114,7 +114,7 @@ class TestTortilla(unittest.TestCase):
         assert api.more is api.more.chaining.parent
         assert api('expert/chaining/stuff') is not api.expert.chaining.stuff
         assert api('hello', 'world') is api.hello.world
-        assert api(u'products', 123).parent is api.products
+        assert api('products', 123).parent is api.products
 
     def test_debugging(self):
         api.user.get('имя', debug=True)
