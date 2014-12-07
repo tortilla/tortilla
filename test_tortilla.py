@@ -77,6 +77,8 @@ class TestTortilla(unittest.TestCase):
         assert api.user('имя').url() == API_URL + '/user/имя'
         trailing_slash_api = tortilla.wrap(API_URL + '/')
         assert trailing_slash_api.endpoint.url() == API_URL + '/endpoint'
+        assert api('hello', 'world').url() == API_URL + '/hello/world'
+        assert api('products', 123).url() == API_URL + '/products/123'
 
     def test_cached_response(self):
         api.cache.get(cache_lifetime=100)
@@ -103,12 +105,16 @@ class TestTortilla(unittest.TestCase):
         assert api.stuff.extension == 'xml'
         assert api.stuff.cache_lifetime == 8
         assert not api.stuff.silent
+        api.stuff('more', 'stuff', debug=True)
+        assert api.stuff.debug
 
     def test_wrap_chain(self):
         assert api.chained.wrap.stuff is api('chained').wrap('stuff')
         assert api.more.chaining.stuff is api.more('chaining')('stuff')
         assert api.more is api.more.chaining.parent
         assert api('expert/chaining/stuff') is not api.expert.chaining.stuff
+        assert api('hello', 'world') is api.hello.world
+        assert api(u'products', 123).parent is api.products
 
     def test_debugging(self):
         api.user.get('имя', debug=True)
