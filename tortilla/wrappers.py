@@ -69,6 +69,7 @@ class Client(object):
         self.headers = bunch.Bunch()
         self.debug = debug
         self.cache = {}
+        self.session = requests.session()
 
     def _log(self, message, debug=None, **kwargs):
         """Outputs a colored and formatted message in the console
@@ -141,8 +142,8 @@ class Client(object):
                 return bunch.bunchify(item['value'])
             del self.cache[cache_key]
 
-        r = requests.request(method, url, params=params,
-                             headers=request_headers, data=data, **kwargs)
+        r = self.session.request(method, url, params=params,
+                                 headers=request_headers, data=data, **kwargs)
 
         try:
             has_body = len(r.text) > 0
