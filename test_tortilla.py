@@ -37,7 +37,6 @@ def register_urls(endpoints):
             body = json.dumps(options.get('body'))
         else:
             body = options.get('body')
-        print(body, endpoint)
         httpretty.register_uri(method=options.get('method', 'GET'),
                                status=options.get('status', 200),
                                uri=API_URL + endpoint,
