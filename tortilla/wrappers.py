@@ -241,7 +241,7 @@ class Wrap(object):
         :param options: (optional) Arguments accepted by the
             :class:`Wrap` initializer
         """
-        self.__dict__.update(**options)
+        self.config.update(**options)
 
         if len(parts) == 0:
             return self
@@ -268,14 +268,14 @@ class Wrap(object):
                                        debug=self.config.get('debug'))
             return self.__dict__[part]
 
-    def request(self, method, pk=None, **options):
+    def request(self, method, *parts, **options):
         """Requests a URL and returns a *Bunched* response.
 
         This method basically wraps the request method of the requests
         module and adds a `path` and `debug` option.
 
         :param method: The request method, e.g. 'get', 'post', etc.
-        :param pk: (optional) A primary key to append to the path
+        :param part: (optional) A primary key to append to the path
         :param url: (optional) The URL to request
         :param path: (optional) Appended to the request URL. This can be
             either a string or a list which will be joined
@@ -289,50 +289,53 @@ class Wrap(object):
             the `requests.request` method
         :return: :class:`Bunch` object from JSON-parsed response
         """
-
-        if not options.get('url'):
-            # if a primary key is given, it is joined with the requested URL
-            if pk:
-                options['url'] = '/'.join([self.url(), pk])
-            else:
+        if len(parts) == 0:
+            if 'url' not in options:
+                # the last part constructs the URL
                 options['url'] = self.url()
 
-        for key, value in six.iteritems(self.config):
-            # set the defaults in the options
-            if value is not None:
-                if isinstance(value, dict):
-                    # prevents overwriting default values in dicts
-                    copy = value.copy()
-                    if options.get(key):
-                        copy.update(options[key])
-                    options[key] = copy
-                options.setdefault(key, value)
+            for key, value in six.iteritems(self.config):
+                # set the defaults in the options
+                if value is not None:
+                    if isinstance(value, dict):
+                        # prevents overwriting default values in dicts
+                        copy = value.copy()
+                        if options.get(key):
+                            copy.update(options[key])
+                        options[key] = copy
+                    options.setdefault(key, value)
 
-        return self._parent.request(method=method, **options)
+            # at this point, we're ready to completely go down the chain
+            return self._parent.request(method=method, **options)
 
-    def get(self, pk=None, **options):
+        else:
+            # the chain will be extended with the parts and finally a
+            # request will be triggered
+            return self.__call__(*parts).request(method=method, **options)
+
+    def get(self, *parts, **options):
         """Executes a `GET` request on the currently formed URL."""
-        return self.request('get', pk, **options)
+        return self.request('get', *parts, **options)
 
-    def post(self, pk=None, **options):
+    def post(self, *parts, **options):
         """Executes a `POST` request on the currently formed URL."""
-        return self.request('post', pk, **options)
+        return self.request('post', *parts, **options)
 
-    def put(self, pk=None, **options):
+    def put(self, *parts, **options):
         """Executes a `PUT` request on the currently formed URL."""
-        return self.request('put', pk, **options)
+        return self.request('put', *parts, **options)
 
-    def patch(self, pk=None, **options):
+    def patch(self, *parts, **options):
         """Executes a `PATCH` request on the currently formed URL."""
-        return self.request('patch', pk, **options)
+        return self.request('patch', *parts, **options)
 
-    def delete(self, pk=None, **options):
+    def delete(self, *parts, **options):
         """Executes a `DELETE` request on the currently formed URL."""
-        return self.request('delete', pk, **options)
+        return self.request('delete', *parts, **options)
 
-    def head(self, pk=None, **options):
+    def head(self, *parts, **options):
         """Executes a `HEAD` request on the currently formed URL."""
-        return self.request('head', pk, **options)
+        return self.request('head', *parts, **options)
 
     def __repr__(self):
         return "<{} for {}>".format(self.__class__.__name__, self.url())

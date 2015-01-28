@@ -96,17 +96,17 @@ class TestTortilla(unittest.TestCase):
 
     def test_wrap_config(self):
         api.stuff(debug=True, extension='json', cache_lifetime=5, silent=True)
-        assert api.stuff.debug
-        assert api.stuff.extension == 'json'
-        assert api.stuff.cache_lifetime == 5
-        assert api.stuff.silent
+        assert api.stuff.config.debug
+        assert api.stuff.config.extension == 'json'
+        assert api.stuff.config.cache_lifetime == 5
+        assert api.stuff.config.silent
         api.stuff(debug=False, extension='xml', cache_lifetime=8, silent=False)
-        assert not api.stuff.debug
-        assert api.stuff.extension == 'xml'
-        assert api.stuff.cache_lifetime == 8
-        assert not api.stuff.silent
+        assert not api.stuff.config.debug
+        assert api.stuff.config.extension == 'xml'
+        assert api.stuff.config.cache_lifetime == 8
+        assert not api.stuff.config.silent
         api.stuff('more', 'stuff', debug=True)
-        assert api.stuff.debug
+        assert api.stuff.config.debug
 
     def test_wrap_chain(self):
         assert api.chained.wrap.stuff is api('chained').wrap('stuff')
