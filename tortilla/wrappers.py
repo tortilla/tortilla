@@ -6,6 +6,7 @@ import time
 import bunch
 import colorclass
 import requests
+import six
 
 from .compat import string_type
 from .utils import run_from_ipython
@@ -188,28 +189,32 @@ class Wrap(object):
     new :class:`Client` object which will act as the root.
     """
 
-    def __init__(self, part, parent=None, headers=None, debug=None,
-                 cache_lifetime=None, silent=False, extension=None):
+    def __init__(self, part, parent=None, headers=None, params=None,
+                 debug=None, cache_lifetime=None, silent=False,
+                 extension=None):
         if isinstance(part, string_type):
             # trailing slashes are removed
-            self.part = part[:-1] if part[-1:] == '/' else part
+            self._part = part[:-1] if part[-1:] == '/' else part
         else:
-            self.part = str(part)
+            self._part = str(part)
         self._url = None
-        self.parent = parent or Client(debug=debug)
-        self.headers = bunch.bunchify(headers) if headers else bunch.Bunch()
-        self.debug = debug
-        self.cache_lifetime = cache_lifetime
-        self.silent = silent
-        self.extension = extension
+        self._parent = parent or Client(debug=debug)
+        self.config = bunch.Bunch(
+            headers=bunch.bunchify(headers) if headers else bunch.Bunch(),
+            params=bunch.bunchify(params) if params else bunch.Bunch(),
+            debug=debug,
+            cache_lifetime=cache_lifetime,
+            silent=silent,
+            extension=extension,
+        )
 
     def url(self):
         if self._url:
             return self._url
         try:
-            self._url = '/'.join([self.parent.url(), self.part])
+            self._url = '/'.join([self._parent.url(), self._part])
         except AttributeError:
-            self._url = self.part
+            self._url = self._part
         return self._url
 
     def __call__(self, *parts, **options):
@@ -260,7 +265,7 @@ class Wrap(object):
             return self.__dict__[part]
         except KeyError:
             self.__dict__[part] = Wrap(part=part, parent=self,
-                                       debug=self.debug)
+                                       debug=self.config.get('debug'))
             return self.__dict__[part]
 
     def request(self, method, pk=None, **options):
@@ -292,23 +297,18 @@ class Wrap(object):
             else:
                 options['url'] = self.url()
 
-        if self.debug is not None:
-            options.setdefault('debug', self.debug)
-        if self.cache_lifetime is not None:
-            options.setdefault('cache_lifetime', self.cache_lifetime)
-        if self.silent is not None:
-            options.setdefault('silent', self.silent)
-        if self.extension is not None:
-            options.setdefault('extension', self.extension)
+        for key, value in six.iteritems(self.config):
+            # set the defaults in the options
+            if value is not None:
+                if isinstance(value, dict):
+                    # prevents overwriting default values in dicts
+                    copy = value.copy()
+                    if options.get(key):
+                        copy.update(options[key])
+                    options[key] = copy
+                options.setdefault(key, value)
 
-        # headers are copied into a new object so temporary
-        # custom headers aren't overriding future requests
-        headers = self.headers.copy()
-        if options.get('headers'):
-            headers.update(options['headers'])
-        options['headers'] = headers
-
-        return self.parent.request(method=method, **options)
+        return self._parent.request(method=method, **options)
 
     def get(self, pk=None, **options):
         """Executes a `GET` request on the currently formed URL."""

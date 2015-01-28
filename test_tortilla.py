@@ -111,10 +111,9 @@ class TestTortilla(unittest.TestCase):
     def test_wrap_chain(self):
         assert api.chained.wrap.stuff is api('chained').wrap('stuff')
         assert api.more.chaining.stuff is api.more('chaining')('stuff')
-        assert api.more is api.more.chaining.parent
         assert api('expert/chaining/stuff') is not api.expert.chaining.stuff
         assert api('hello', 'world') is api.hello.world
-        assert api('products', 123).parent is api.products
+        assert api('products', 123) is api.products(123)
 
     def test_debugging(self):
         api.user.get('имя', debug=True)
