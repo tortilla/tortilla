@@ -6,9 +6,10 @@ import time
 import bunch
 import colorclass
 import requests
+import six
 
 from .compat import string_type
-from .utils import run_from_ipython
+from .utils import formats, run_from_ipython
 
 
 debug_messages = {
@@ -89,7 +90,7 @@ class Client(object):
 
     def request(self, method, url, path=(), extension=None, params=None,
                 headers=None, data=None, debug=None, cache_lifetime=None,
-                silent=False, ignore_cache=False, **kwargs):
+                silent=False, ignore_cache=False, format='json', **kwargs):
         """Requests a URL and returns a *Bunched* response.
 
         This method basically wraps the request method of the requests
@@ -118,6 +119,8 @@ class Client(object):
         request_headers = dict(self.headers.__dict__)
         if headers is not None:
             request_headers.update(headers)
+        request_headers.setdefault('Content-Type',
+                                   formats.meta(format).get('content_type'))
 
         if debug is None:
             debug = self.debug
@@ -148,9 +151,9 @@ class Client(object):
         try:
             has_body = len(r.text) > 0
             if not has_body:
-                json_response = 'No response'
+                parsed_response = 'No response'
             else:
-                json_response = r.json()
+                parsed_response = formats.parse(format, r.text)
         except ValueError as e:
             if len(r.text) > DEBUG_MAX_TEXT_LENGTH:
                 text = r.text[:DEBUG_MAX_TEXT_LENGTH] + '...'
@@ -164,16 +167,16 @@ class Client(object):
 
         if cache_lifetime and cache_lifetime > 0 and method.lower() == 'get':
             self.cache[cache_key] = {'expires': time.time() + cache_lifetime,
-                                     'value': json_response}
+                                     'value': parsed_response}
 
         debug_message = 'success_response' if r.status_code == 200 else \
             'failure_response'
         self._log(debug_messages[debug_message], debug,
                   status_code=r.status_code, reason=r.reason,
-                  text=json_response)
+                  text=parsed_response)
 
         if has_body:
-            return bunch.bunchify(json_response)
+            return bunch.bunchify(parsed_response)
         return None
 
 
@@ -188,28 +191,32 @@ class Wrap(object):
     new :class:`Client` object which will act as the root.
     """
 
-    def __init__(self, part, parent=None, headers=None, debug=None,
-                 cache_lifetime=None, silent=False, extension=None):
+    def __init__(self, part, parent=None, headers=None, params=None,
+                 debug=None, cache_lifetime=None, silent=False,
+                 extension=None):
         if isinstance(part, string_type):
             # trailing slashes are removed
-            self.part = part[:-1] if part[-1:] == '/' else part
+            self._part = part[:-1] if part[-1:] == '/' else part
         else:
-            self.part = str(part)
+            self._part = str(part)
         self._url = None
-        self.parent = parent or Client(debug=debug)
-        self.headers = bunch.bunchify(headers) if headers else bunch.Bunch()
-        self.debug = debug
-        self.cache_lifetime = cache_lifetime
-        self.silent = silent
-        self.extension = extension
+        self._parent = parent or Client(debug=debug)
+        self.config = bunch.Bunch(
+            headers=bunch.bunchify(headers) if headers else bunch.Bunch(),
+            params=bunch.bunchify(params) if params else bunch.Bunch(),
+            debug=debug,
+            cache_lifetime=cache_lifetime,
+            silent=silent,
+            extension=extension,
+        )
 
     def url(self):
         if self._url:
             return self._url
         try:
-            self._url = '/'.join([self.parent.url(), self.part])
+            self._url = '/'.join([self._parent.url(), self._part])
         except AttributeError:
-            self._url = self.part
+            self._url = self._part
         return self._url
 
     def __call__(self, *parts, **options):
@@ -236,7 +243,7 @@ class Wrap(object):
         :param options: (optional) Arguments accepted by the
             :class:`Wrap` initializer
         """
-        self.__dict__.update(**options)
+        self.config.update(**options)
 
         if len(parts) == 0:
             return self
@@ -260,17 +267,17 @@ class Wrap(object):
             return self.__dict__[part]
         except KeyError:
             self.__dict__[part] = Wrap(part=part, parent=self,
-                                       debug=self.debug)
+                                       debug=self.config.get('debug'))
             return self.__dict__[part]
 
-    def request(self, method, pk=None, **options):
+    def request(self, method, *parts, **options):
         """Requests a URL and returns a *Bunched* response.
 
         This method basically wraps the request method of the requests
         module and adds a `path` and `debug` option.
 
         :param method: The request method, e.g. 'get', 'post', etc.
-        :param pk: (optional) A primary key to append to the path
+        :param part: (optional) A primary key to append to the path
         :param url: (optional) The URL to request
         :param path: (optional) Appended to the request URL. This can be
             either a string or a list which will be joined
@@ -284,55 +291,53 @@ class Wrap(object):
             the `requests.request` method
         :return: :class:`Bunch` object from JSON-parsed response
         """
+        if len(parts) != 0:
+            # the chain will be extended with the parts and finally a
+            # request will be triggered
+            return self.__call__(*parts).request(method=method, **options)
 
-        if not options.get('url'):
-            # if a primary key is given, it is joined with the requested URL
-            if pk:
-                options['url'] = '/'.join([self.url(), pk])
-            else:
+        else:
+            if 'url' not in options:
+                # the last part constructs the URL
                 options['url'] = self.url()
 
-        if self.debug is not None:
-            options.setdefault('debug', self.debug)
-        if self.cache_lifetime is not None:
-            options.setdefault('cache_lifetime', self.cache_lifetime)
-        if self.silent is not None:
-            options.setdefault('silent', self.silent)
-        if self.extension is not None:
-            options.setdefault('extension', self.extension)
+            for key, value in six.iteritems(self.config):
+                # set the defaults in the options
+                if value is not None:
+                    if isinstance(value, dict):
+                        # prevents overwriting default values in dicts
+                        copy = value.copy()
+                        if options.get(key):
+                            copy.update(options[key])
+                        options[key] = copy
+                    options.setdefault(key, value)
 
-        # headers are copied into a new object so temporary
-        # custom headers aren't overriding future requests
-        headers = self.headers.copy()
-        if options.get('headers'):
-            headers.update(options['headers'])
-        options['headers'] = headers
+            # at this point, we're ready to completely go down the chain
+            return self._parent.request(method=method, **options)
 
-        return self.parent.request(method=method, **options)
-
-    def get(self, pk=None, **options):
+    def get(self, *parts, **options):
         """Executes a `GET` request on the currently formed URL."""
-        return self.request('get', pk, **options)
+        return self.request('get', *parts, **options)
 
-    def post(self, pk=None, **options):
+    def post(self, *parts, **options):
         """Executes a `POST` request on the currently formed URL."""
-        return self.request('post', pk, **options)
+        return self.request('post', *parts, **options)
 
-    def put(self, pk=None, **options):
+    def put(self, *parts, **options):
         """Executes a `PUT` request on the currently formed URL."""
-        return self.request('put', pk, **options)
+        return self.request('put', *parts, **options)
 
-    def patch(self, pk=None, **options):
+    def patch(self, *parts, **options):
         """Executes a `PATCH` request on the currently formed URL."""
-        return self.request('patch', pk, **options)
+        return self.request('patch', *parts, **options)
 
-    def delete(self, pk=None, **options):
+    def delete(self, *parts, **options):
         """Executes a `DELETE` request on the currently formed URL."""
-        return self.request('delete', pk, **options)
+        return self.request('delete', *parts, **options)
 
-    def head(self, pk=None, **options):
+    def head(self, *parts, **options):
         """Executes a `HEAD` request on the currently formed URL."""
-        return self.request('head', pk, **options)
+        return self.request('head', *parts, **options)
 
     def __repr__(self):
         return "<{} for {}>".format(self.__class__.__name__, self.url())
