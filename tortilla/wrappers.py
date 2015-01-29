@@ -3,13 +3,12 @@
 import os
 import time
 
-import bunch
 import colorclass
 import requests
 import six
 
 from .compat import string_type
-from .utils import formats, run_from_ipython
+from .utils import formats, run_from_ipython, Bunch, bunchify
 
 
 debug_messages = {
@@ -67,7 +66,7 @@ class Client(object):
     """Wrapper around the most basic methods of the requests library."""
 
     def __init__(self, debug=False):
-        self.headers = bunch.Bunch()
+        self.headers = Bunch()
         self.debug = debug
         self.cache = {}
         self.session = requests.session()
@@ -142,7 +141,7 @@ class Client(object):
             if item['expires'] > time.time():
                 self._log(debug_messages['cached_response'], debug,
                           text=item['value'])
-                return bunch.bunchify(item['value'])
+                return bunchify(item['value'])
             del self.cache[cache_key]
 
         r = self.session.request(method, url, params=params,
@@ -176,7 +175,7 @@ class Client(object):
                   text=parsed_response)
 
         if has_body:
-            return bunch.bunchify(parsed_response)
+            return bunchify(parsed_response)
         return None
 
 
@@ -201,9 +200,9 @@ class Wrap(object):
             self._part = str(part)
         self._url = None
         self._parent = parent or Client(debug=debug)
-        self.config = bunch.Bunch(
-            headers=bunch.bunchify(headers) if headers else bunch.Bunch(),
-            params=bunch.bunchify(params) if params else bunch.Bunch(),
+        self.config = Bunch(
+            headers=bunchify(headers) if headers else Bunch(),
+            params=bunchify(params) if params else Bunch(),
             debug=debug,
             cache_lifetime=cache_lifetime,
             silent=silent,

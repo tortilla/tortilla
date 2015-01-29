@@ -36,7 +36,6 @@ setup(
     keywords='api wrapper',
     packages=['tortilla'],
     install_requires=[
-        'lunch',
         'colorclass',
         'requests',
         'formats',
