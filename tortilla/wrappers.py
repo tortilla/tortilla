@@ -9,7 +9,7 @@ import requests
 import six
 
 from .compat import string_type
-from .utils import run_from_ipython
+from .utils import formats, run_from_ipython
 
 
 debug_messages = {
@@ -90,7 +90,7 @@ class Client(object):
 
     def request(self, method, url, path=(), extension=None, params=None,
                 headers=None, data=None, debug=None, cache_lifetime=None,
-                silent=False, ignore_cache=False, **kwargs):
+                silent=False, ignore_cache=False, format='json', **kwargs):
         """Requests a URL and returns a *Bunched* response.
 
         This method basically wraps the request method of the requests
@@ -119,6 +119,8 @@ class Client(object):
         request_headers = dict(self.headers.__dict__)
         if headers is not None:
             request_headers.update(headers)
+        request_headers.setdefault('Content-Type',
+                                   formats.meta(format).get('content_type'))
 
         if debug is None:
             debug = self.debug
@@ -149,9 +151,9 @@ class Client(object):
         try:
             has_body = len(r.text) > 0
             if not has_body:
-                json_response = 'No response'
+                parsed_response = 'No response'
             else:
-                json_response = r.json()
+                parsed_response = formats.parse(format, r.text)
         except ValueError as e:
             if len(r.text) > DEBUG_MAX_TEXT_LENGTH:
                 text = r.text[:DEBUG_MAX_TEXT_LENGTH] + '...'
@@ -165,16 +167,16 @@ class Client(object):
 
         if cache_lifetime and cache_lifetime > 0 and method.lower() == 'get':
             self.cache[cache_key] = {'expires': time.time() + cache_lifetime,
-                                     'value': json_response}
+                                     'value': parsed_response}
 
         debug_message = 'success_response' if r.status_code == 200 else \
             'failure_response'
         self._log(debug_messages[debug_message], debug,
                   status_code=r.status_code, reason=r.reason,
-                  text=json_response)
+                  text=parsed_response)
 
         if has_body:
-            return bunch.bunchify(json_response)
+            return bunch.bunchify(parsed_response)
         return None
 
 
@@ -289,7 +291,12 @@ class Wrap(object):
             the `requests.request` method
         :return: :class:`Bunch` object from JSON-parsed response
         """
-        if len(parts) == 0:
+        if len(parts) != 0:
+            # the chain will be extended with the parts and finally a
+            # request will be triggered
+            return self.__call__(*parts).request(method=method, **options)
+
+        else:
             if 'url' not in options:
                 # the last part constructs the URL
                 options['url'] = self.url()
@@ -307,11 +314,6 @@ class Wrap(object):
 
             # at this point, we're ready to completely go down the chain
             return self._parent.request(method=method, **options)
-
-        else:
-            # the chain will be extended with the parts and finally a
-            # request will be triggered
-            return self.__call__(*parts).request(method=method, **options)
 
     def get(self, *parts, **options):
         """Executes a `GET` request on the currently formed URL."""
