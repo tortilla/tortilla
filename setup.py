@@ -18,7 +18,7 @@ setup(
     long_description=long_description,
     url='https://github.com/redodo/tortilla',
     author='Hidde Bultsma',
-    author_email='dodo@gododo.co',
+    author_email='me@redodo.io',
     license='MIT',
     classifiers=[
         'Development Status :: 4 - Beta',
