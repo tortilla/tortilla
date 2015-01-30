@@ -7,6 +7,7 @@ import colorclass
 import requests
 import six
 
+from .cache import DictCache
 from .compat import string_type
 from .utils import formats, run_from_ipython, Bunch, bunchify
 
@@ -39,8 +40,8 @@ debug_messages = {
         '    {text}\n'
         '{/hiblack}'
     ),
-    'nojson_response': (
-        '{red}Got {status_code} {reason} (NOT JSON):{/red}\n'
+    'incorrect_format_response': (
+        '{red}Got {status_code} {reason} (not {format}):{/red}\n'
         '{hiblack}'
         '    {text}\n'
         '{/hiblack}'
@@ -65,10 +66,10 @@ if os.name == 'nt':
 class Client(object):
     """Wrapper around the most basic methods of the requests library."""
 
-    def __init__(self, debug=False):
+    def __init__(self, debug=False, cache=None):
         self.headers = Bunch()
         self.debug = debug
-        self.cache = {}
+        self.cache = cache if cache else DictCache()
         self.session = requests.session()
 
     def _log(self, message, debug=None, **kwargs):
@@ -131,18 +132,17 @@ class Client(object):
 
         url = url + path + extension
 
-        self._log(debug_messages['request'], debug,
-                  method=method.upper(), url=url, headers=request_headers,
-                  params=params, data=data)
+        self._log(debug_messages['request'], debug, method=method.upper(),
+                  url=url, headers=request_headers, params=params, data=data)
 
         cache_key = (url, str(params), str(headers))
-        if cache_key in self.cache and not ignore_cache:
-            item = self.cache[cache_key]
+        if self.cache.has(cache_key) and not ignore_cache:
+            item = self.cache.get(cache_key)
             if item['expires'] > time.time():
                 self._log(debug_messages['cached_response'], debug,
                           text=item['value'])
                 return bunchify(item['value'])
-            del self.cache[cache_key]
+            self.cache.delete(cache_key)
 
         r = self.session.request(method, url, params=params,
                                  headers=request_headers, data=data, **kwargs)
@@ -158,15 +158,16 @@ class Client(object):
                 text = r.text[:DEBUG_MAX_TEXT_LENGTH] + '...'
             else:
                 text = r.text
-            self._log(debug_messages['nojson_response'], debug,
-                      status_code=r.status_code, reason=r.reason, text=text)
+            self._log(debug_messages['incorrect_format_response'], debug,
+                      format=format, status_code=r.status_code,
+                      reason=r.reason, text=text)
             if silent:
                 return None
             raise e
 
         if cache_lifetime and cache_lifetime > 0 and method.lower() == 'get':
-            self.cache[cache_key] = {'expires': time.time() + cache_lifetime,
-                                     'value': parsed_response}
+            self.cache.set(cache_key, {'expires': time.time() + cache_lifetime,
+                                       'value': parsed_response})
 
         debug_message = 'success_response' if r.status_code == 200 else \
             'failure_response'
@@ -192,14 +193,14 @@ class Wrap(object):
 
     def __init__(self, part, parent=None, headers=None, params=None,
                  debug=None, cache_lifetime=None, silent=False,
-                 extension=None):
+                 extension=None, format=None, cache=None):
         if isinstance(part, string_type):
             # trailing slashes are removed
             self._part = part[:-1] if part[-1:] == '/' else part
         else:
             self._part = str(part)
         self._url = None
-        self._parent = parent or Client(debug=debug)
+        self._parent = parent or Client(debug=debug, cache=cache)
         self.config = Bunch(
             headers=bunchify(headers) if headers else Bunch(),
             params=bunchify(params) if params else Bunch(),
@@ -207,6 +208,7 @@ class Wrap(object):
             cache_lifetime=cache_lifetime,
             silent=silent,
             extension=extension,
+            format=format,
         )
 
     def url(self):
