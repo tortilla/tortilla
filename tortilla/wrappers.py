@@ -104,58 +104,76 @@ class Client(object):
         :param path: (optional) Appended to the request URL. This can be
             either a string or a list which will be joined
             by forward slashes.
+        :param extension: (optional) The extension to append to the URL.
         :param params: (optional) The URL query parameters
         :param headers: (optional) Extra headers to sent with the request.
             Existing header keys can be overwritten.
         :param data: (optional) Dictionary
         :param debug: (optional) Overwrite of `Client.debug`
+        :param cache_lifetime: (optional) The amount of seconds that the
+            response has to be cached for.
+        :param silent: (optional) When ``True`, any exception resulted
+            from HTTP status codes or parsing will be ignored.
+        :param ignore_cache: (optional) When ``True``, a previously
+            cached response of the same request will be ignored.
+        :param format: (optional) The type of response data to parse.
+            When executing a POST or PUT request, the ``data`` argument
+            will be converted to the format type.
         :param kwargs: (optional) Arguments that will be passed to
             the `requests.request` method
         :return: :class:`Bunch` object from JSON-parsed response
         """
+        if debug is None:
+            debug = self.debug
 
-        if not isinstance(path, string_type):
-            path = '/'.join(path)
-
+        # build the request headers
         request_headers = dict(self.headers.__dict__)
         if headers is not None:
             request_headers.update(headers)
         request_headers.setdefault('Content-Type',
                                    formats.meta(format).get('content_type'))
 
-        if debug is None:
-            debug = self.debug
-
+        # form the URL
+        if not isinstance(path, string_type):
+            path = '/'.join(path)
         if extension is None:
             extension = ''
         elif not extension.startswith('.'):
             extension = '.' + extension
+        url = '%s%s%s' % (url, path, extension)
 
+        # compose the POST or PUT data if required
         if method.lower() in ('post', 'put') and format:
             data = formats.compose(format, data)
 
-        url = url + path + extension
-
+        # log a debug message about the request we're about to make
         self._log(debug_messages['request'], debug, method=method.upper(),
                   url=url, headers=request_headers, params=params, data=data)
 
+        # actually, check if we have something in the cache that's valid
         cache_key = (url, str(params), str(headers))
         if self.cache.has(cache_key) and not ignore_cache:
             item = self.cache.get(cache_key)
             self._log(debug_messages['cached_response'], debug, text=item)
             return bunchify(item)
 
+        # execute the request
         r = self.session.request(method, url, params=params,
                                  headers=request_headers, data=data, **kwargs)
-        r.raise_for_status()
+
+        # when not silent, raise an exception for any status code >= 400
+        if not silent:
+            r.raise_for_status()
 
         try:
+            # parse the response into something nice
             has_body = len(r.text) > 0
             if not has_body:
                 parsed_response = 'No response'
             else:
                 parsed_response = formats.parse(format, r.text)
         except ValueError as e:
+            # we've failed, raise this stuff when not silent
             if len(r.text) > DEBUG_MAX_TEXT_LENGTH:
                 text = r.text[:DEBUG_MAX_TEXT_LENGTH] + '...'
             else:
@@ -167,15 +185,18 @@ class Client(object):
                 return None
             raise e
 
+        # cache the response if required
         if cache_lifetime and cache_lifetime > 0 and method.lower() == 'get':
             self.cache.set(cache_key, parsed_response, cache_lifetime)
 
+        # print out a final debug message about the response of the request
         debug_message = 'success_response' if r.status_code == 200 else \
             'failure_response'
         self._log(debug_messages[debug_message], debug,
                   status_code=r.status_code, reason=r.reason,
                   text=parsed_response)
 
+        # return our findings and try to make it a bit nicer
         if has_body:
             return bunchify(parsed_response)
         return None
