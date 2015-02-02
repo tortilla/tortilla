@@ -28,6 +28,14 @@
     "/another/test": {
       "method": "HEAD",
       "body": ""
+    },
+    "/status_404": {
+      "status": 404,
+      "body": ""
+    },
+    "/status_500": {
+      "status": 500,
+      "body": ""
     }
   }
 }

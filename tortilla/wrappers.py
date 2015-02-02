@@ -186,6 +186,7 @@ class Client(object):
             raise e
 
         # cache the response if required
+        # only GET requests are cached
         if cache_lifetime and cache_lifetime > 0 and method.lower() == 'get':
             self.cache.set(cache_key, parsed_response, cache_lifetime)
 

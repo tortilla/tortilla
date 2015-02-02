@@ -9,6 +9,7 @@ import unittest
 import httpretty
 import tortilla
 import six
+from requests.exceptions import HTTPError
 
 
 def monkey_patch_httpretty():
@@ -49,6 +50,8 @@ endpoints = test_data['endpoints']
 register_urls(endpoints)
 
 
+# this is a special endpoint which loops through responses,
+# very useful to test the cache
 httpretty.register_uri(
     httpretty.GET, API_URL + '/cache',
     responses=[
@@ -116,6 +119,16 @@ class TestTortilla(unittest.TestCase):
 
     def test_debugging(self):
         api.user.get('имя', debug=True)
+
+    def test_response_exceptions(self):
+        self.assertRaises(HTTPError, api.status_404.get)
+        self.assertRaises(HTTPError, api.status_500.get)
+        try:
+            api.status_404.get(silent=True)
+            api.status_500.get(silent=True)
+        except HTTPError:
+            self.fail("Wrap.get() raised an unexpected HTTPError while being "
+                      "told to be silent!")
 
 
 if __name__ == '__main__':
