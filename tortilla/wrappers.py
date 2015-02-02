@@ -7,7 +7,7 @@ import colorclass
 import requests
 import six
 
-from .cache import DictCache
+from .cache import CacheWrapper, DictCache
 from .compat import string_type
 from .utils import formats, run_from_ipython, Bunch, bunchify
 
@@ -70,6 +70,7 @@ class Client(object):
         self.headers = Bunch()
         self.debug = debug
         self.cache = cache if cache else DictCache()
+        self.cache = CacheWrapper(self.cache)
         self.session = requests.session()
 
     def _log(self, message, debug=None, **kwargs):
@@ -130,6 +131,9 @@ class Client(object):
         elif not extension.startswith('.'):
             extension = '.' + extension
 
+        if method.lower() in ('post', 'put') and format:
+            data = formats.compose(format, data)
+
         url = url + path + extension
 
         self._log(debug_messages['request'], debug, method=method.upper(),
@@ -138,14 +142,12 @@ class Client(object):
         cache_key = (url, str(params), str(headers))
         if self.cache.has(cache_key) and not ignore_cache:
             item = self.cache.get(cache_key)
-            if item['expires'] > time.time():
-                self._log(debug_messages['cached_response'], debug,
-                          text=item['value'])
-                return bunchify(item['value'])
-            self.cache.delete(cache_key)
+            self._log(debug_messages['cached_response'], debug, text=item)
+            return bunchify(item)
 
         r = self.session.request(method, url, params=params,
                                  headers=request_headers, data=data, **kwargs)
+        r.raise_for_status()
 
         try:
             has_body = len(r.text) > 0
@@ -166,8 +168,7 @@ class Client(object):
             raise e
 
         if cache_lifetime and cache_lifetime > 0 and method.lower() == 'get':
-            self.cache.set(cache_key, {'expires': time.time() + cache_lifetime,
-                                       'value': parsed_response})
+            self.cache.set(cache_key, parsed_response, cache_lifetime)
 
         debug_message = 'success_response' if r.status_code == 200 else \
             'failure_response'
