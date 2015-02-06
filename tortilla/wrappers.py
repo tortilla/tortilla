@@ -66,12 +66,15 @@ if os.name == 'nt':
 class Client(object):
     """Wrapper around the most basic methods of the requests library."""
 
-    def __init__(self, debug=False, cache=None):
+    def __init__(self, debug=False, cache=None, delay=0.):
         self.headers = Bunch()
         self.debug = debug
         self.cache = cache if cache else DictCache()
         self.cache = CacheWrapper(self.cache)
         self.session = requests.session()
+
+        self.delay = delay
+        self._time_last_request = time.time() - self.delay
 
     def _log(self, message, debug=None, **kwargs):
         """Outputs a colored and formatted message in the console
@@ -159,6 +162,14 @@ class Client(object):
             self._log(debug_messages['cached_response'], debug, text=item)
             return bunchify(item)
 
+        # sleep only if needed
+        if self.delay > 0:
+            current_time = time.time()
+            elapsed = current_time - self._time_last_request
+            if elapsed < self.delay:
+                time.sleep(self.delay - elapsed)
+            self._time_last_request = current_time
+
         # execute the request
         r = self.session.request(method, url, params=params,
                                  headers=request_headers, data=data, **kwargs)
@@ -218,14 +229,14 @@ class Wrap(object):
 
     def __init__(self, part, parent=None, headers=None, params=None,
                  debug=None, cache_lifetime=None, silent=False,
-                 extension=None, format=None, cache=None):
+                 extension=None, format=None, cache=None, delay=0.):
         if isinstance(part, string_type):
             # trailing slashes are removed
             self._part = part[:-1] if part[-1:] == '/' else part
         else:
             self._part = str(part)
         self._url = None
-        self._parent = parent or Client(debug=debug, cache=cache)
+        self._parent = parent or Client(debug=debug, cache=cache, delay=delay)
         self.config = Bunch(
             headers=bunchify(headers) if headers else Bunch(),
             params=bunchify(params) if params else Bunch(),
