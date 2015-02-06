@@ -130,8 +130,14 @@ class Client(object):
         request_headers = dict(self.headers.__dict__)
         if headers is not None:
             request_headers.update(headers)
-        request_headers.setdefault('Content-Type',
-                                   formats.meta(format).get('content_type'))
+
+        # add Content-Type header & compose data, only when
+        # 1. content is actually sent (whatever the HTTP verb is used)
+        # 2. format is provided ('json' by default)
+        if format and (data is not None):
+            request_headers.setdefault(
+                'Content-Type', formats.meta(format).get('content_type'))
+            data = formats.compose(format, data)
 
         # form the URL
         if not isinstance(path, string_type):
@@ -141,10 +147,6 @@ class Client(object):
         elif not extension.startswith('.'):
             extension = '.' + extension
         url = '%s%s%s' % (url, path, extension)
-
-        # compose the POST or PUT data if required
-        if method.lower() in ('post', 'put') and format:
-            data = formats.compose(format, data)
 
         # log a debug message about the request we're about to make
         self._log(debug_messages['request'], debug, method=method.upper(),
