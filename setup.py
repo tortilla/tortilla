@@ -39,5 +39,6 @@ setup(
         'colorclass',
         'requests',
         'formats',
+        'six',
     ],
 )
