@@ -13,7 +13,7 @@ with open(path.join(here, 'README.rst'), encoding='utf-8') as f:
 
 setup(
     name='tortilla',
-    version='0.4.0b2',
+    version='0.4.0',
     description='A tiny library for creating wrappers around web APIs',
     long_description=long_description,
     url='https://github.com/redodo/tortilla',
@@ -21,7 +21,7 @@ setup(
     author_email='me@redodo.io',
     license='MIT',
     classifiers=[
-        'Development Status :: 4 - Beta',
+        'Development Status :: 5 - Production/Stable',
         'Intended Audience :: Developers',
         'License :: OSI Approved :: MIT License',
         'Programming Language :: Python :: 2',
