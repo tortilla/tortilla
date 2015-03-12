@@ -94,7 +94,7 @@ class Client(object):
 
     def request(self, method, url, path=(), extension=None, params=None,
                 headers=None, data=None, debug=None, cache_lifetime=None,
-                silent=False, ignore_cache=False, req_format='json', resp_format='json', **kwargs):
+                silent=False, ignore_cache=False, format='json', **kwargs):
         """Requests a URL and returns a *Bunched* response.
 
         This method basically wraps the request method of the requests
@@ -119,11 +119,13 @@ class Client(object):
             from HTTP status codes or parsing will be ignored.
         :param ignore_cache: (optional) When ``True``, a previously
             cached response of the same request will be ignored.
-        :param req_format: (optional) The type of response data to parse.
-            May take the values: None, 'json'(default), 'yml' (see formats)
-        :param resp_format: (optional) The type
-            When executing a POST or PUT request, the ``data`` argument
-            will be converted to the format type.
+        :param format: (optional) The type of request data to parse.
+            May take the following values:
+              - 'json', 'xml', ... both request data load and response are
+                converted to the specified format
+              - (None, 'json') a tuple, with the request data format in pos 0
+                and the response format in pos 1
+            defaults to 'json'
         :param kwargs: (optional) Arguments that will be passed to
             the `requests.request` method
         :return: :class:`Bunch` object from JSON-parsed response
@@ -135,6 +137,13 @@ class Client(object):
         request_headers = dict(self.headers.__dict__)
         if headers is not None:
             request_headers.update(headers)
+
+        # extract req_format and resp_format from format arguments
+        if type(format) in (list, tuple) and len(format) == 2:
+            req_format = format[0]
+            resp_format = format[1]
+        else:
+            req_format = resp_format = format
 
         # add Content-Type header & compose data, only when
         # 1. content is actually sent (whatever the HTTP verb is used)
