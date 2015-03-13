@@ -119,9 +119,13 @@ class Client(object):
             from HTTP status codes or parsing will be ignored.
         :param ignore_cache: (optional) When ``True``, a previously
             cached response of the same request will be ignored.
-        :param format: (optional) The type of response data to parse.
-            When executing a POST or PUT request, the ``data`` argument
-            will be converted to the format type.
+        :param format: (optional) The type of request data to parse.
+            May take the following values:
+              - 'json', 'xml', ... both request data load and response are
+                converted to the specified format
+              - (None, 'json') a tuple, with the request data format in pos 0
+                and the response format in pos 1
+            defaults to 'json'
         :param kwargs: (optional) Arguments that will be passed to
             the `requests.request` method
         :return: :class:`Bunch` object from JSON-parsed response
@@ -134,13 +138,20 @@ class Client(object):
         if headers is not None:
             request_headers.update(headers)
 
+        # extract req_format and resp_format from format arguments
+        if type(format) in (list, tuple) and len(format) == 2:
+            req_format = format[0]
+            resp_format = format[1]
+        else:
+            req_format = resp_format = format
+
         # add Content-Type header & compose data, only when
         # 1. content is actually sent (whatever the HTTP verb is used)
         # 2. format is provided ('json' by default)
-        if format and (data is not None):
+        if req_format and (data is not None):
             request_headers.setdefault(
-                'Content-Type', formats.meta(format).get('content_type'))
-            data = formats.compose(format, data)
+                'Content-Type', formats.meta(req_format).get('content_type'))
+            data = formats.compose(req_format, data)
 
         # form the URL
         if not isinstance(path, string_type):
@@ -184,7 +195,7 @@ class Client(object):
             if not has_body:
                 parsed_response = 'No response'
             else:
-                parsed_response = formats.parse(format, r.text)
+                parsed_response = formats.parse(resp_format, r.text)
         except ValueError as e:
             # we've failed, raise this stuff when not silent
             if len(r.text) > DEBUG_MAX_TEXT_LENGTH:
@@ -192,7 +203,7 @@ class Client(object):
             else:
                 text = r.text
             self._log(debug_messages['incorrect_format_response'], debug,
-                      format=format, status_code=r.status_code,
+                      format=resp_format, status_code=r.status_code,
                       reason=r.reason, text=text)
             if silent:
                 return None
