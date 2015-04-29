@@ -20,7 +20,9 @@ def run_from_ipython():
 
 
 class Bunch(dict):
-    def __init__(self, **kwargs):
+    def __init__(self, kwargs=None):
+        if kwargs is None:
+            kwargs = {}
         for key, value in six.iteritems(kwargs):
             kwargs[key] = bunchify(value)
         dict.__init__(self, kwargs)
@@ -31,5 +33,5 @@ def bunchify(obj):
     if isinstance(obj, (list, tuple)):
         return [bunchify(item) for item in obj]
     if isinstance(obj, dict):
-        return Bunch(**obj)
+        return Bunch(obj)
     return obj

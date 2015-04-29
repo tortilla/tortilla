@@ -248,15 +248,15 @@ class Wrap(object):
             self._part = str(part)
         self._url = None
         self._parent = parent or Client(debug=debug, cache=cache, delay=delay)
-        self.config = Bunch(
-            headers=bunchify(headers) if headers else Bunch(),
-            params=bunchify(params) if params else Bunch(),
-            debug=debug,
-            cache_lifetime=cache_lifetime,
-            silent=silent,
-            extension=extension,
-            format=format,
-        )
+        self.config = Bunch({
+            'headers': bunchify(headers) if headers else Bunch(),
+            'params': bunchify(params) if params else Bunch(),
+            'debug': debug,
+            'cache_lifetime': cache_lifetime,
+            'silent': silent,
+            'extension': extension,
+            'format': format,
+        })
 
     def url(self):
         if self._url:
