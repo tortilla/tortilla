@@ -2,7 +2,7 @@ Tortilla
 ========
 
 
-|Build Status| |Coverage| |Docs| |Version| |Python Versions| |License|
+|Build Status| |Coverage| |Docs| |Version| |License|
 
 .. |Build Status| image:: https://img.shields.io/travis/redodo/tortilla.svg?style=flat
     :target: https://travis-ci.org/redodo/tortilla
@@ -16,9 +16,6 @@ Tortilla
 .. |Version| image:: https://img.shields.io/pypi/v/tortilla.svg?style=flat
     :target: https://pypi.python.org/pypi/tortilla
     :alt: Version
-.. |Python Versions| image:: https://pypip.in/py_versions/tortilla/badge.svg?style=flat
-    :target: https://pypi.python.org/pypi/tortilla
-    :alt: Python versions
 .. |License| image:: https://img.shields.io/pypi/l/tortilla.svg?style=flat
     :target: https://github.com/redodo/tortilla/blob/master/LICENSE
     :alt: License

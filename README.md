@@ -5,7 +5,6 @@ Tortilla
 [<img src="https://img.shields.io/coveralls/redodo/tortilla.svg?style=flat">](https://coveralls.io/r/redodo/tortilla)
 [<img src="https://readthedocs.org/projects/tortilla/badge/?version=latest&style=flat">](https://tortilla.readthedocs.org/latest/)
 [<img src="https://img.shields.io/pypi/v/tortilla.svg?style=flat">](https://pypi.python.org/pypi/tortilla)
-[<img src="https://pypip.in/py_versions/tortilla/badge.svg?style=flat">](https://pypi.python.org/pypi/tortilla)
 [<img src="https://img.shields.io/pypi/l/tortilla.svg?style=flat">](https://github.com/redodo/tortilla/blob/master/LICENSE)
 
 *Wrapping web APIs made easy.*
