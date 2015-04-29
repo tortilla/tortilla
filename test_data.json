@@ -25,6 +25,10 @@
       "method": "DELETE",
       "body": {"message": "Success!"}
     },
+    "/has_self": {
+      "method": "GET",
+      "body": {"self": "me"}
+    },
     "/another/test": {
       "method": "HEAD",
       "body": ""

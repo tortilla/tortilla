@@ -66,6 +66,7 @@ class TestTortilla(unittest.TestCase):
     def test_json_response(self):
         assert api.user.get('jimmy') == endpoints['/user/jimmy']['body']
         assert api.user.get('имя') == endpoints['/user/имя']['body']
+        assert api.has_self.get() == endpoints['/has_self']['body']
 
     def test_non_json_response(self):
         self.assertRaises(ValueError, api.nojson.get)
