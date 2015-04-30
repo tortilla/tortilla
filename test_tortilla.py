@@ -61,6 +61,13 @@ httpretty.register_uri(
 )
 
 
+def function_time(func, *args, **kwargs):
+    """Returns the elapsed time of the function."""
+    start = time.time()
+    func(*args, **kwargs)
+    return time.time() - start
+
+
 class TestTortilla(unittest.TestCase):
 
     def test_json_response(self):
@@ -90,12 +97,25 @@ class TestTortilla(unittest.TestCase):
         time.sleep(0.5)
         assert api.cache.get() == "this should not be returned"
 
+    def test_request_delay(self):
+        api.config.delay = 0.5
+        api.test.get()
+        assert function_time(api.test.get) >= 0.5
+        assert function_time(api.test.get, delay=0.3) >= 0.3
+        assert function_time(api.test.get) >= 0.5
+        # do not delay the rest of the tests
+        api.config.delay = 0
+
     def test_request_methods(self):
         assert api.awesome.tweet.post().message == "Success!"
         assert api.cash.money.put().message == "Success!"
         assert api.windows.ssh.patch().message == "Success!"
         assert api.world.hunger.delete().message == "Success!"
         assert api.another.test.head() is None
+
+    def test_extensions(self):
+        assert api.extension.hello.get(extension='json').message == 'Success!'
+        assert api.extension.hello.get(extension='.json').message == 'Success!'
 
     def test_wrap_config(self):
         api.stuff(debug=True, extension='json', cache_lifetime=5, silent=True)
