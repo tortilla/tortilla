@@ -66,15 +66,13 @@ if os.name == 'nt':
 class Client(object):
     """Wrapper around the most basic methods of the requests library."""
 
-    def __init__(self, debug=False, cache=None, delay=0.):
+    def __init__(self, debug=False, cache=None):
         self.headers = Bunch()
         self.debug = debug
         self.cache = cache if cache else DictCache()
         self.cache = CacheWrapper(self.cache)
         self.session = requests.session()
-
-        self.delay = delay
-        self._time_last_request = time.time() - self.delay
+        self._last_request_time = None
 
     def _log(self, message, debug=None, **kwargs):
         """Outputs a colored and formatted message in the console
@@ -94,7 +92,8 @@ class Client(object):
 
     def request(self, method, url, path=(), extension=None, params=None,
                 headers=None, data=None, debug=None, cache_lifetime=None,
-                silent=False, ignore_cache=False, format='json', **kwargs):
+                silent=False, ignore_cache=False, format='json', delay=0.0,
+                **kwargs):
         """Requests a URL and returns a *Bunched* response.
 
         This method basically wraps the request method of the requests
@@ -126,6 +125,8 @@ class Client(object):
               - (None, 'json') a tuple, with the request data format in pos 0
                 and the response format in pos 1
             defaults to 'json'
+        :param delay: (option) Ensures a minimum delay of seconds between
+            requests.
         :param kwargs: (optional) Arguments that will be passed to
             the `requests.request` method
         :return: :class:`Bunch` object from JSON-parsed response
@@ -173,17 +174,16 @@ class Client(object):
             self._log(debug_messages['cached_response'], debug, text=item)
             return bunchify(item)
 
-        # sleep only if needed
-        if self.delay > 0:
-            current_time = time.time()
-            elapsed = current_time - self._time_last_request
-            if elapsed < self.delay:
-                time.sleep(self.delay - elapsed)
-            self._time_last_request = current_time
+        # delay if needed
+        if delay > 0:
+            elapsed = time.time() - self._last_request_time
+            if elapsed < delay:
+                time.sleep(delay - elapsed)
 
         # execute the request
         r = self.session.request(method, url, params=params,
                                  headers=request_headers, data=data, **kwargs)
+        self._last_request_time = time.time()
 
         # when not silent, raise an exception for any status code >= 400
         if not silent:
@@ -240,14 +240,14 @@ class Wrap(object):
 
     def __init__(self, part, parent=None, headers=None, params=None,
                  debug=None, cache_lifetime=None, silent=False,
-                 extension=None, format=None, cache=None, delay=0.):
+                 extension=None, format=None, cache=None, delay=None):
         if isinstance(part, string_type):
             # trailing slashes are removed
             self._part = part[:-1] if part[-1:] == '/' else part
         else:
             self._part = str(part)
         self._url = None
-        self._parent = parent or Client(debug=debug, cache=cache, delay=delay)
+        self._parent = parent or Client(debug=debug, cache=cache)
         self.config = Bunch({
             'headers': bunchify(headers) if headers else Bunch(),
             'params': bunchify(params) if params else Bunch(),
@@ -256,6 +256,7 @@ class Wrap(object):
             'silent': silent,
             'extension': extension,
             'format': format,
+            'delay': delay,
         })
 
     def url(self):

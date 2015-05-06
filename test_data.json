@@ -1,5 +1,8 @@
 {
   "endpoints": {
+    "/test": {
+      "body": {"message": "Regular endpoint."}
+    },
     "/nojson": {
       "body": "This is not a JSON response."
     },
@@ -40,6 +43,9 @@
     "/status_500": {
       "status": 500,
       "body": ""
+    },
+    "/extension/hello.json": {
+      "body": {"message": "Success!"}
     }
   }
 }
