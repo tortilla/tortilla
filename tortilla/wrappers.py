@@ -359,7 +359,8 @@ class Wrap(object):
                         if options.get(key):
                             copy.update(options[key])
                         options[key] = copy
-                    options.setdefault(key, value)
+                    else:
+                        options.setdefault(key, value)
 
             # at this point, we're ready to completely go down the chain
             return self._parent.request(method=method, **options)
