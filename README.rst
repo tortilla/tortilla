@@ -96,7 +96,7 @@ A common requirement for accessing APIs is providing authentication
 data. This usually has to be described in the headers of each request.
 Tortilla makes it very easy for you to describe those recurring headers::
 
-    api.headers.token = 'secret authentication token'
+    api.config.headers.token = 'secret authentication token'
 
 You can also define custom headers per request::
 
