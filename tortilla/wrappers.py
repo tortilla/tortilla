@@ -12,6 +12,7 @@ from .compat import string_type
 from .utils import formats, run_from_ipython, Bunch, bunchify
 
 
+#: Dictionary of colored debug messages used in the `~Client._log` method
 debug_messages = {
     'request': (
         '{blue}Executing {method} request:{/blue}\n'
@@ -49,17 +50,19 @@ debug_messages = {
 }
 
 
+#: The maximum length of a response displayed in a debug message
 DEBUG_MAX_TEXT_LENGTH = 100
 
 
 if os.name == 'nt':
     if run_from_ipython():
         # IPython stops working properly when it loses control of
-        # `stdout` on Windows. In this case we won't enable Windows
+        # `stdout` on Windows. In this case, we won't enable Windows
         # color support and we'll strip out all colors from the debug
         # messages.
         colorclass.disable_all_colors()
     else:
+        # Color support for Windows has to be explicitly enabled.
         colorclass.Windows.enable()
 
 
@@ -78,7 +81,7 @@ class Client(object):
         """Outputs a colored and formatted message in the console
         if the debug mode is activated.
 
-        :param message: the message that will be printed
+        :param message: The message that will be printed
         :param debug: (optional) Overwrite of `Client.debug`
         :param kwargs: (optional) Arguments that will be passed
             to the `str.format()` method
@@ -106,8 +109,8 @@ class Client(object):
         :param path: (optional) Appended to the request URL. This can be
             either a string or a list which will be joined
             by forward slashes.
-        :param extension: (optional) The extension to append to the URL.
-        :param params: (optional) The URL query parameters
+        :param extension: (optional) The extension to append to the URL
+        :param params: (optional) The URL query parameters.
         :param headers: (optional) Extra headers to sent with the request.
             Existing header keys can be overwritten.
         :param data: (optional) Dictionary
@@ -139,20 +142,19 @@ class Client(object):
         if headers is not None:
             request_headers.update(headers)
 
-        # extract req_format and resp_format from format arguments
+        # extract request_format and response_format from format arguments
         if type(format) in (list, tuple) and len(format) == 2:
-            req_format = format[0]
-            resp_format = format[1]
+            request_format, response_format = format
         else:
-            req_format = resp_format = format
+            request_format = response_format = format
 
-        # add Content-Type header & compose data, only when
-        # 1. content is actually sent (whatever the HTTP verb is used)
-        # 2. format is provided ('json' by default)
-        if req_format and (data is not None):
+        # add the 'Content-Type' header and compose data, only when:
+        #   1. the content is actually sent (whatever the HTTP verb is used)
+        #   2. the format is provided ('json' by default)
+        if request_format and (data is not None):
             request_headers.setdefault(
-                'Content-Type', formats.meta(req_format).get('content_type'))
-            data = formats.compose(req_format, data)
+                'Content-Type', formats.meta(request_format).get('content_type'))
+            data = formats.compose(request_format, data)
 
         # form the URL
         if not isinstance(path, string_type):
@@ -163,18 +165,18 @@ class Client(object):
             extension = '.' + extension
         url = '%s%s%s' % (url, path, extension)
 
-        # log a debug message about the request we're about to make
+        # log a debug message about the request
         self._log(debug_messages['request'], debug, method=method.upper(),
                   url=url, headers=request_headers, params=params, data=data)
 
-        # actually, check if we have something in the cache that's valid
+        # check if the response for this request is cached
         cache_key = (url, str(params), str(headers))
         if self.cache.has(cache_key) and not ignore_cache:
             item = self.cache.get(cache_key)
             self._log(debug_messages['cached_response'], debug, text=item)
             return bunchify(item)
 
-        # delay if needed
+        # delay the request if needed
         if delay > 0:
             elapsed = time.time() - self._last_request_time
             if elapsed < delay:
@@ -185,7 +187,7 @@ class Client(object):
                                  headers=request_headers, data=data, **kwargs)
         self._last_request_time = time.time()
 
-        # when not silent, raise an exception for any status code >= 400
+        # when not silent, raise an exception for any HTTP status code >= 400
         if not silent:
             r.raise_for_status()
 
@@ -193,9 +195,12 @@ class Client(object):
             # parse the response into something nice
             has_body = len(r.text) > 0
             if not has_body:
+                # TODO: This is set 'No response' for the debug message.
+                #       Extract this into a different variable so that
+                #       `parsed_response` is not ambiguous.
                 parsed_response = 'No response'
             else:
-                parsed_response = formats.parse(resp_format, r.text)
+                parsed_response = formats.parse(response_format, r.text)
         except ValueError as e:
             # we've failed, raise this stuff when not silent
             if len(r.text) > DEBUG_MAX_TEXT_LENGTH:
@@ -203,7 +208,7 @@ class Client(object):
             else:
                 text = r.text
             self._log(debug_messages['incorrect_format_response'], debug,
-                      format=resp_format, status_code=r.status_code,
+                      format=response_format, status_code=r.status_code,
                       reason=r.reason, text=text)
             if silent:
                 return None
@@ -326,17 +331,8 @@ class Wrap(object):
         module and adds a `path` and `debug` option.
 
         :param method: The request method, e.g. 'get', 'post', etc.
-        :param part: (optional) A primary key to append to the path
-        :param url: (optional) The URL to request
-        :param path: (optional) Appended to the request URL. This can be
-            either a string or a list which will be joined
-            by forward slashes.
-        :param params: (optional) The URL query parameters
-        :param headers: (optional) Extra headers to sent with the request.
-            Existing header keys can be overwritten.
-        :param data: (optional) Dictionary
-        :param debug: (optional) Overwrite of `Client.debug`
-        :param kwargs: (optional) Arguments that will be passed to
+        :param parts: (optional) Additional path parts to append to the URL
+        :param options: (optional) Arguments that will be passed to
             the `requests.request` method
         :return: :class:`Bunch` object from JSON-parsed response
         """
