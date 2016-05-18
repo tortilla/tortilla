@@ -8,7 +8,6 @@ import requests
 import six
 
 from .cache import CacheWrapper, DictCache
-from .compat import string_type
 from .utils import formats, run_from_ipython, Bunch, bunchify
 
 
@@ -155,7 +154,7 @@ class Client(object):
             data = formats.compose(req_format, data)
 
         # form the URL
-        if not isinstance(path, string_type):
+        if not hasattr(path, "encode"):
             path = '/'.join(path)
         if extension is None:
             extension = ''
