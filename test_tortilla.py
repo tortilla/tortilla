@@ -3,6 +3,7 @@
 
 from __future__ import unicode_literals
 
+import sys
 import json
 import time
 import unittest
@@ -12,7 +13,6 @@ import six
 from requests.exceptions import HTTPError
 
 import tortilla
-from tortilla.compat import is_py2
 
 
 def monkey_patch_httpretty():
@@ -28,7 +28,7 @@ def monkey_patch_httpretty():
     httpretty.core.url_fix = fixed_url_fix
 
 
-if is_py2:
+if sys.version[0] == 2:
     monkey_patch_httpretty()
 
 
