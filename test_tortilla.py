@@ -9,7 +9,6 @@ import time
 import unittest
 
 import httpretty
-import six
 from requests.exceptions import HTTPError
 
 import tortilla
@@ -28,7 +27,7 @@ def monkey_patch_httpretty():
     httpretty.core.url_fix = fixed_url_fix
 
 
-if sys.version[0] == 2:
+if sys.version_info[0] == 2:
     monkey_patch_httpretty()
 
 
@@ -37,7 +36,7 @@ api = tortilla.wrap(API_URL)
 
 
 def register_urls(urls):
-    for endpoint, options in six.iteritems(urls):
+    for endpoint, options in urls.items():
         if isinstance(options.get('body'), (dict, list, tuple)):
             body = json.dumps(options.get('body'))
         else:
