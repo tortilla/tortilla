@@ -36,8 +36,8 @@ API_URL = 'https://test.tortilla.locally'
 api = tortilla.wrap(API_URL)
 
 
-def register_urls(endpoints):
-    for endpoint, options in six.iteritems(endpoints):
+def register_urls(urls):
+    for endpoint, options in six.iteritems(urls):
         if isinstance(options.get('body'), (dict, list, tuple)):
             body = json.dumps(options.get('body'))
         else:
