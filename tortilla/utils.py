@@ -12,11 +12,7 @@ discover_yaml(formats, content_type='application/x-yaml')
 
 
 def run_from_ipython():
-    try:
-        __IPYTHON__
-        return True
-    except NameError:
-        return False
+    return getattr(__builtins__, "__IPYTHON__", False)
 
 
 class Bunch(dict):
