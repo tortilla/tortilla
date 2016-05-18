@@ -1,5 +1,7 @@
 # -*- coding: utf-8 -*-
 
+from __future__ import unicode_literals
+
 import os
 import time
 
@@ -87,7 +89,7 @@ class Client(object):
             display_log = debug
         if display_log:
             colored_message = colorclass.Color(message)
-            print((colored_message.format(**kwargs)))
+            print(colored_message.format(**kwargs))
 
     def request(self, method, url, path=(), extension=None, params=None,
                 headers=None, data=None, debug=None, cache_lifetime=None,
