@@ -72,6 +72,11 @@ def time_function(func, *args, **kwargs):
 
 
 class TestTortilla(unittest.TestCase):
+    def setUp(self):
+        httpretty.enable()
+
+    def tearDown(self):
+        httpretty.disable()
 
     def test_json_response(self):
         assert api.user.get('jimmy') == endpoints['/user/jimmy']['body']
@@ -156,6 +161,4 @@ class TestTortilla(unittest.TestCase):
 
 
 if __name__ == '__main__':
-    httpretty.enable()
     unittest.main()
-    httpretty.disable()
