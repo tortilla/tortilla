@@ -2,14 +2,16 @@
 # -*- coding: utf-8 -*-
 
 from __future__ import unicode_literals
+
+import sys
 import json
 import time
 import unittest
 
 import httpretty
-import tortilla
-import six
 from requests.exceptions import HTTPError
+
+import tortilla
 
 
 def monkey_patch_httpretty():
@@ -18,13 +20,14 @@ def monkey_patch_httpretty():
     # when the string contains unicode. To prevent this, we encode the
     # string so urllib can safely quote it.
     from httpretty.core import url_fix
+
     def fixed_url_fix(s, charset='utf-8'):
         return url_fix(s.encode(charset), charset)
+
     httpretty.core.url_fix = fixed_url_fix
 
 
-from tortilla.compat import is_py2
-if is_py2:
+if sys.version_info[0] == 2:
     monkey_patch_httpretty()
 
 
@@ -32,8 +35,8 @@ API_URL = 'https://test.tortilla.locally'
 api = tortilla.wrap(API_URL)
 
 
-def register_urls(endpoints):
-    for endpoint, options in six.iteritems(endpoints):
+def register_urls(urls):
+    for endpoint, options in urls.items():
         if isinstance(options.get('body'), (dict, list, tuple)):
             body = json.dumps(options.get('body'))
         else:
@@ -49,14 +52,13 @@ with open('test_data.json') as resource:
 endpoints = test_data['endpoints']
 register_urls(endpoints)
 
-
 # this is a special endpoint which loops through responses,
 # very useful to test the cache
 httpretty.register_uri(
     httpretty.GET, API_URL + '/cache',
     responses=[
-       httpretty.Response(body='"cache this response"'),
-       httpretty.Response(body='"this should not be returned"'),
+        httpretty.Response(body='"cache this response"'),
+        httpretty.Response(body='"this should not be returned"'),
     ]
 )
 
@@ -69,6 +71,11 @@ def time_function(func, *args, **kwargs):
 
 
 class TestTortilla(unittest.TestCase):
+    def setUp(self):
+        httpretty.enable()
+
+    def tearDown(self):
+        httpretty.disable()
 
     def test_json_response(self):
         assert api.user.get('jimmy') == endpoints['/user/jimmy']['body']
@@ -153,6 +160,4 @@ class TestTortilla(unittest.TestCase):
 
 
 if __name__ == '__main__':
-    httpretty.enable()
     unittest.main()
-    httpretty.disable()

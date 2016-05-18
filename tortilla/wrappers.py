@@ -1,5 +1,7 @@
 # -*- coding: utf-8 -*-
 
+from __future__ import unicode_literals
+
 import os
 import time
 
@@ -8,7 +10,6 @@ import requests
 import six
 
 from .cache import CacheWrapper, DictCache
-from .compat import string_type
 from .utils import formats, run_from_ipython, Bunch, bunchify
 
 
@@ -88,7 +89,7 @@ class Client(object):
             display_log = debug
         if display_log:
             colored_message = colorclass.Color(message)
-            print((colored_message.format(**kwargs)))
+            print(colored_message.format(**kwargs))
 
     def request(self, method, url, path=(), extension=None, params=None,
                 headers=None, data=None, debug=None, cache_lifetime=None,
@@ -155,7 +156,7 @@ class Client(object):
             data = formats.compose(req_format, data)
 
         # form the URL
-        if not isinstance(path, string_type):
+        if not hasattr(path, "encode"):
             path = '/'.join(path)
         if extension is None:
             extension = ''
@@ -241,11 +242,9 @@ class Wrap(object):
     def __init__(self, part, parent=None, headers=None, params=None,
                  debug=None, cache_lifetime=None, silent=False,
                  extension=None, format=None, cache=None, delay=None):
-        if isinstance(part, string_type):
-            # trailing slashes are removed
-            self._part = part[:-1] if part[-1:] == '/' else part
-        else:
-            self._part = str(part)
+        if not hasattr(part, "encode"):
+            part = str(part)
+        self._part = part[:-1] if part[-1:] == '/' else part
         self._url = None
         self._parent = parent or Client(debug=debug, cache=cache)
         self.config = Bunch({
