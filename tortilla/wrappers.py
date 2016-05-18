@@ -240,11 +240,8 @@ class Wrap(object):
     def __init__(self, part, parent=None, headers=None, params=None,
                  debug=None, cache_lifetime=None, silent=False,
                  extension=None, format=None, cache=None, delay=None):
-        if isinstance(part, string_type):
-            # trailing slashes are removed
-            self._part = part[:-1] if part[-1:] == '/' else part
-        else:
-            self._part = str(part)
+        self._part = str(part)
+        self._part = self._part[:-1] if self._part[-1:] == '/' else self._part
         self._url = None
         self._parent = parent or Client(debug=debug, cache=cache)
         self.config = Bunch({
