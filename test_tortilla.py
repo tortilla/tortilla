@@ -2,14 +2,17 @@
 # -*- coding: utf-8 -*-
 
 from __future__ import unicode_literals
+
 import json
 import time
 import unittest
 
 import httpretty
-import tortilla
 import six
 from requests.exceptions import HTTPError
+
+import tortilla
+from tortilla.compat import is_py2
 
 
 def monkey_patch_httpretty():
@@ -18,12 +21,13 @@ def monkey_patch_httpretty():
     # when the string contains unicode. To prevent this, we encode the
     # string so urllib can safely quote it.
     from httpretty.core import url_fix
+
     def fixed_url_fix(s, charset='utf-8'):
         return url_fix(s.encode(charset), charset)
+
     httpretty.core.url_fix = fixed_url_fix
 
 
-from tortilla.compat import is_py2
 if is_py2:
     monkey_patch_httpretty()
 
@@ -49,14 +53,13 @@ with open('test_data.json') as resource:
 endpoints = test_data['endpoints']
 register_urls(endpoints)
 
-
 # this is a special endpoint which loops through responses,
 # very useful to test the cache
 httpretty.register_uri(
     httpretty.GET, API_URL + '/cache',
     responses=[
-       httpretty.Response(body='"cache this response"'),
-       httpretty.Response(body='"this should not be returned"'),
+        httpretty.Response(body='"cache this response"'),
+        httpretty.Response(body='"this should not be returned"'),
     ]
 )
 
