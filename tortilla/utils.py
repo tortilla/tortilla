@@ -21,7 +21,7 @@ class Bunch(dict):
             kwargs = {}
         for key, value in six.iteritems(kwargs):
             kwargs[key] = bunchify(value)
-        super().__init__(kwargs)
+        super(Bunch, self).__init__(kwargs)
         self.__dict__ = self
 
 
