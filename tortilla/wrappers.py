@@ -245,12 +245,14 @@ class Wrap(object):
 
     def __init__(self, part, parent=None, headers=None, params=None,
                  debug=None, cache_lifetime=None, silent=False,
-                 extension=None, format=None, cache=None, delay=None):
+                 extension=None, format=None, cache=None, delay=None,
+                 suffix=""):
         if not hasattr(part, "encode"):
             part = str(part)
         self._part = part[:-1] if part[-1:] == '/' else part
         self._url = None
         self._parent = parent or Client(debug=debug, cache=cache)
+        self.suffix = suffix
         self.config = Bunch({
             'headers': bunchify(headers) if headers else Bunch(),
             'params': bunchify(params) if params else Bunch(),
@@ -262,13 +264,16 @@ class Wrap(object):
             'delay': delay,
         })
 
-    def url(self):
-        if self._url:
-            return self._url
-        try:
-            self._url = '/'.join([self._parent.url(), self._part])
-        except AttributeError:
-            self._url = self._part
+    def url(self, suffix=""):
+        if not self._url:
+            try:
+                self._url = "%s/%s%s" % (self._parent.url(), self._part, self.suffix)
+            except AttributeError:
+                self._url = self._part
+
+        if suffix:
+            return self._url + suffix
+
         return self._url
 
     def __call__(self, *parts, **options):
@@ -319,7 +324,8 @@ class Wrap(object):
             return self.__dict__[part]
         except KeyError:
             self.__dict__[part] = Wrap(part=part, parent=self,
-                                       debug=self.config.get('debug'))
+                                       debug=self.config.get('debug'),
+                                       suffix=self.suffix)
             return self.__dict__[part]
 
     def request(self, method, *parts, **options):

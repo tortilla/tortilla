@@ -35,41 +35,72 @@ if sys.version_info[0] == 2:
     monkey_patch_httpretty()
 
 
+# this is a special endpoint which loops through responses,
+# very useful to test the cache
+httpretty.register_uri(
+    httpretty.GET, API_URL + '/cache',
+    responses=[
+        httpretty.Response(body='"cache this response"'),
+        httpretty.Response(body='"this should not be returned"'),
+    ]
+)
+
+
+def setup():
+    with open('test_data.json') as resource:
+        test_data = json.load(resource)
+
+    endpoints = test_data['endpoints']
+
+    for endpoint, options in endpoints.items():
+        if isinstance(options.get('body'), (dict, list, tuple)):
+            body = json.dumps(options.get('body'))
+        else:
+            body = options.get('body')
+
+        httpretty.register_uri(method=options.get('method', 'GET'),
+                               status=options.get('status', 200),
+                               uri=API_URL + endpoint,
+                               body=body)
+
+    return endpoints
+
+
 class TestTortilla(unittest.TestCase):
-    @classmethod
-    def setUpClass(cls):
-        # this is a special endpoint which loops through responses,
-        # very useful to test the cache
-        httpretty.register_uri(
-            httpretty.GET, API_URL + '/cache',
-            responses=[
-                httpretty.Response(body='"cache this response"'),
-                httpretty.Response(body='"this should not be returned"'),
-            ]
-        )
-
-        with open('test_data.json') as resource:
-            test_data = json.load(resource)
-
-        cls.endpoints = test_data['endpoints']
-
-        for endpoint, options in cls.endpoints.items():
-            if isinstance(options.get('body'), (dict, list, tuple)):
-                body = json.dumps(options.get('body'))
-            else:
-                body = options.get('body')
-
-            httpretty.register_uri(method=options.get('method', 'GET'),
-                                   status=options.get('status', 200),
-                                   uri=API_URL + endpoint,
-                                   body=body)
+    endpoints = None
 
     def setUp(self):
         httpretty.enable()
         self.api = tortilla.wrap(API_URL)
 
+        if self.endpoints is None:
+            self.endpoints = setup()
+
     def tearDown(self):
         httpretty.disable()
+
+    # Python 2.6 compatibility
+    #
+    def assertIs(self, expr1, expr2, msg=None):
+        if expr1 is not expr2:
+            standard_msg = '%s is not %s' % (repr(expr1), repr(expr2))
+            self.fail(self._formatMessage(msg, standard_msg))
+
+    def assertIsNot(self, expr1, expr2, msg=None):
+        if expr1 is expr2:
+            standard_msg = 'unexpectedly identical: %s' % (repr(expr1),)
+            self.fail(self._formatMessage(msg, standard_msg))
+
+    def assertGreaterEqual(self, a, b, msg=None):
+        if not a >= b:
+            standard_msg = '%s not greater than or equal to %s' % (repr(a), repr(b))
+            self.fail(self._formatMessage(msg, standard_msg))
+
+    def assertIsInstance(self, obj, cls, msg=None):
+        if not isinstance(obj, cls):
+            standard_msg = '%s is not an instance of %r' % (repr(obj), cls)
+            self.fail(self._formatMessage(msg, standard_msg))
+    # /Python 2.6
 
     def _time_function(self, func, *args, **kwargs):
         """Returns the time it took for a function to execute."""
@@ -86,29 +117,32 @@ class TestTortilla(unittest.TestCase):
                          self.endpoints['/has_self']['body'])
 
     def test_non_json_response(self):
-        with self.assertRaises(ValueError):
-            self.api.nojson.get()
-        self.assertIsNone(self.api.nojson.get(silent=True))
+        self.assertRaises(ValueError, self.api.nojson.get)
+        self.assertIs(self.api.nojson.get(silent=True), None)
 
     def test_formed_urls(self):
-        self.assertEquals(self.api.this.url(), API_URL + '/this')
-        self.assertEquals(self.api('this').url(), API_URL + '/this')
-        self.assertEquals(self.api.this('that').url(), API_URL + '/this/that')
-        self.assertEquals(self.api('this')('that').url(), API_URL + '/this/that')
-        self.assertEquals(self.api.user('имя').url(), API_URL + '/user/имя')
-        self.assertEquals(self.api('hello', 'world').url(), API_URL + '/hello/world')
-        self.assertEquals(self.api('products', 123).url(), API_URL + '/products/123')
+        self.assertEqual(self.api.this.url(), API_URL + '/this')
+        self.assertEqual(self.api('this').url(), API_URL + '/this')
+        self.assertEqual(self.api.this('that').url(), API_URL + '/this/that')
+        self.assertEqual(self.api('this')('that').url(), API_URL + '/this/that')
+        self.assertEqual(self.api.user('имя').url(), API_URL + '/user/имя')
+        self.assertEqual(self.api('hello', 'world').url(), API_URL + '/hello/world')
+        self.assertEqual(self.api('products', 123).url(), API_URL + '/products/123')
+        self.assertEqual(self.api('products', 123).url(suffix="/"), API_URL + '/products/123/')
 
         trailing_slash_api = tortilla.wrap(API_URL + '/')
-        self.assertEquals(trailing_slash_api.endpoint.url(), API_URL + '/endpoint')
+        self.assertEqual(trailing_slash_api.endpoint.url(), API_URL + '/endpoint')
+
+        append_url_api = tortilla.wrap(API_URL + '/', suffix="/")
+        self.assertEqual(append_url_api.endpoint.url(), API_URL + '/endpoint/')
 
     def test_cached_response(self):
         self.api.cache.get(cache_lifetime=100)
-        self.assertEquals(self.api.cache.get(), "cache this response")
+        self.assertEqual(self.api.cache.get(), "cache this response")
 
         self.api.cache.get(cache_lifetime=0.25, ignore_cache=True)
         time.sleep(0.5)
-        self.assertEquals(self.api.cache.get(), "this should not be returned")
+        self.assertEqual(self.api.cache.get(), "this should not be returned")
 
     def test_request_delay(self):
         self.api.config.delay = 0.5
@@ -121,27 +155,27 @@ class TestTortilla(unittest.TestCase):
         self.api.config.delay = 0
 
     def test_request_methods(self):
-        self.assertEquals(self.api.awesome.tweet.post().message, "Success!")
-        self.assertEquals(self.api.cash.money.put().message, "Success!")
-        self.assertEquals(self.api.windows.ssh.patch().message, "Success!")
-        self.assertEquals(self.api.world.hunger.delete().message, "Success!")
-        self.assertIsNone(self.api.another.test.head())
+        self.assertEqual(self.api.awesome.tweet.post().message, "Success!")
+        self.assertEqual(self.api.cash.money.put().message, "Success!")
+        self.assertEqual(self.api.windows.ssh.patch().message, "Success!")
+        self.assertEqual(self.api.world.hunger.delete().message, "Success!")
+        self.assertIs(self.api.another.test.head(), None)
 
     def test_extensions(self):
-        self.assertEquals(self.api.extension.hello.get(extension='json').message, 'Success!')
-        self.assertEquals(self.api.extension.hello.get(extension='.json').message, 'Success!')
+        self.assertEqual(self.api.extension.hello.get(extension='json').message, 'Success!')
+        self.assertEqual(self.api.extension.hello.get(extension='.json').message, 'Success!')
 
     def test_wrap_config(self):
         self.api.stuff(debug=True, extension='json', cache_lifetime=5, silent=True)
         self.assertTrue(self.api.stuff.config.debug)
-        self.assertEquals(self.api.stuff.config.extension, 'json')
-        self.assertEquals(self.api.stuff.config.cache_lifetime, 5)
+        self.assertEqual(self.api.stuff.config.extension, 'json')
+        self.assertEqual(self.api.stuff.config.cache_lifetime, 5)
         self.assertTrue(self.api.stuff.config.silent)
 
         self.api.stuff(debug=False, extension='xml', cache_lifetime=8, silent=False)
         self.assertFalse(self.api.stuff.config.debug)
-        self.assertEquals(self.api.stuff.config.extension, 'xml')
-        self.assertEquals(self.api.stuff.config.cache_lifetime, 8)
+        self.assertEqual(self.api.stuff.config.extension, 'xml')
+        self.assertEqual(self.api.stuff.config.cache_lifetime, 8)
         self.assertFalse(self.api.stuff.config.silent)
 
         self.api.stuff('more', 'stuff', debug=True)
@@ -158,11 +192,8 @@ class TestTortilla(unittest.TestCase):
         self.api.user.get('имя', debug=True)
 
     def test_response_exceptions(self):
-        with self.assertRaises(HTTPError):
-            self.api.status_404.get()
-
-        with self.assertRaises(HTTPError):
-            self.api.status_500.get()
+        self.assertRaises(HTTPError, self.api.status_404.get)
+        self.assertRaises(HTTPError, self.api.status_500.get)
 
         try:
             self.api.status_404.get(silent=True)

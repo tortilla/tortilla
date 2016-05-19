@@ -145,6 +145,27 @@ This option can be overridden with every request or subwrap::
     api.special.endpoint.get(extension='xml')
 
 
+URL Suffix
+~~~~~~~~~~
+
+Some APIs uses a trailling slash at the end of URLs like in example below::
+
+  https://api.example.org/resource/
+
+You can add the trailling slash with ``suffix="/"`` argument when wrapping
+the API or getting the URL with ``.url(suffix="/")`` method::
+
+    api = tortilla.wrap('https://api.example.org', suffix="/")
+    api.video(71).comments.url()
+
+Will return the following URL::
+
+    api         -> https://api.example.org
+    .video      -> /video
+    (id)        -> /71/
+    Final URL   -> https://api.example.org/video/71/
+
+
 Debugging
 ~~~~~~~~~
 
