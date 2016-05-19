@@ -128,13 +128,9 @@ class TestTortilla(unittest.TestCase):
         self.assertEqual(self.api.user('имя').url(), API_URL + '/user/имя')
         self.assertEqual(self.api('hello', 'world').url(), API_URL + '/hello/world')
         self.assertEqual(self.api('products', 123).url(), API_URL + '/products/123')
-        self.assertEqual(self.api('products', 123).url(suffix="/"), API_URL + '/products/123/')
 
         trailing_slash_api = tortilla.wrap(API_URL + '/')
         self.assertEqual(trailing_slash_api.endpoint.url(), API_URL + '/endpoint')
-
-        append_url_api = tortilla.wrap(API_URL + '/', suffix="/")
-        self.assertEqual(append_url_api.endpoint.url(), API_URL + '/endpoint/')
 
     def test_cached_response(self):
         self.api.cache.get(cache_lifetime=100)

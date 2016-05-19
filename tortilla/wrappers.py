@@ -91,10 +91,10 @@ class Client(object):
             colored_message = colorclass.Color(message)
             print(colored_message.format(**kwargs))
 
-    def request(self, method, url, path=(), extension=None, params=None,
-                headers=None, data=None, debug=None, cache_lifetime=None,
-                silent=False, ignore_cache=False, format='json', delay=0.0,
-                **kwargs):
+    def request(self, method, url, path=(), extension=None, suffix=None,
+                params=None, headers=None, data=None, debug=None,
+                cache_lifetime=None, silent=False, ignore_cache=False,
+                format='json', delay=0.0, **kwargs):
         """Requests a URL and returns a *Bunched* response.
 
         This method basically wraps the request method of the requests
@@ -108,6 +108,7 @@ class Client(object):
             either a string or a list which will be joined
             by forward slashes.
         :param extension: (optional) The extension to append to the URL.
+        :param suffix: (optional) Append stuff like trailing slashes the URL.
         :param params: (optional) The URL query parameters
         :param headers: (optional) Extra headers to sent with the request.
             Existing header keys can be overwritten.
@@ -162,7 +163,9 @@ class Client(object):
             extension = ''
         elif not extension.startswith('.'):
             extension = '.' + extension
-        url = '%s%s%s' % (url, path, extension)
+        if suffix is None:
+            suffix = ''
+        url = '%s%s%s%s' % (url, path, extension, suffix)
 
         # log a debug message about the request we're about to make
         self._log(debug_messages['request'], debug, method=method.upper(),
@@ -245,14 +248,13 @@ class Wrap(object):
 
     def __init__(self, part, parent=None, headers=None, params=None,
                  debug=None, cache_lifetime=None, silent=False,
-                 extension=None, format=None, cache=None, delay=None,
-                 suffix=""):
+                 extension=None, suffix=None, format=None, cache=None,
+                 delay=None):
         if not hasattr(part, "encode"):
             part = str(part)
         self._part = part[:-1] if part[-1:] == '/' else part
         self._url = None
         self._parent = parent or Client(debug=debug, cache=cache)
-        self.suffix = suffix
         self.config = Bunch({
             'headers': bunchify(headers) if headers else Bunch(),
             'params': bunchify(params) if params else Bunch(),
@@ -260,20 +262,18 @@ class Wrap(object):
             'cache_lifetime': cache_lifetime,
             'silent': silent,
             'extension': extension,
+            'suffix': suffix,
             'format': format,
             'delay': delay,
         })
 
-    def url(self, suffix=""):
-        if not self._url:
-            try:
-                self._url = "%s/%s%s" % (self._parent.url(), self._part, self.suffix)
-            except AttributeError:
-                self._url = self._part
-
-        if suffix:
-            return self._url + suffix
-
+    def url(self):
+        if self._url:
+            return self._url
+        try:
+            self._url = '/'.join([self._parent.url(), self._part])
+        except AttributeError:
+            self._url = self._part
         return self._url
 
     def __call__(self, *parts, **options):
@@ -324,8 +324,7 @@ class Wrap(object):
             return self.__dict__[part]
         except KeyError:
             self.__dict__[part] = Wrap(part=part, parent=self,
-                                       debug=self.config.get('debug'),
-                                       suffix=self.suffix)
+                                       debug=self.config.get('debug'))
             return self.__dict__[part]
 
     def request(self, method, *parts, **options):
