@@ -177,7 +177,11 @@ class Client(object):
 
         # delay if needed
         if delay > 0:
-            elapsed = time.time() - self._last_request_time
+            t = time.time()
+            if self._last_request_time is None:
+                self._last_request_time = t
+
+            elapsed = t - self._last_request_time
             if elapsed < delay:
                 time.sleep(delay - elapsed)
 
