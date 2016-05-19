@@ -97,6 +97,12 @@ class TestTortilla(unittest.TestCase):
         assert api('hello', 'world').url() == API_URL + '/hello/world'
         assert api('products', 123).url() == API_URL + '/products/123'
 
+        append_url_api = tortilla.wrap(API_URL + '/', append_url="/")
+        self.assertEqual(append_url_api.endpoint.url(), API_URL + '/endpoint/')
+
+        append_url_api = tortilla.wrap(API_URL + '/', append_url="/++/")
+        assert append_url_api.endpoint.url() == API_URL + '/endpoint/++/'
+
     def test_cached_response(self):
         api.cache.get(cache_lifetime=100)
         assert api.cache.get() == "cache this response"
