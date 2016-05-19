@@ -263,7 +263,7 @@ class Wrap(object):
     def url(self, suffix=""):
         if not self._url:
             try:
-                self._url = "{}/{}{}".format(self._parent.url(), self._part, self.suffix)
+                self._url = "%s/%s%s" % (self._parent.url(), self._part, self.suffix)
             except AttributeError:
                 self._url = self._part
 
