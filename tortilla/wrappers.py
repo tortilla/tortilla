@@ -260,12 +260,16 @@ class Wrap(object):
             'delay': delay,
         })
 
-    def url(self):
+    def url(self, suffix=""):
         if not self._url:
             try:
                 self._url = "{}/{}{}".format(self._parent.url(), self._part, self.suffix)
             except AttributeError:
                 self._url = self._part
+
+        if suffix:
+            return self._url + suffix
+
         return self._url
 
     def __call__(self, *parts, **options):
