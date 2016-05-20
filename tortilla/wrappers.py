@@ -5,63 +5,62 @@ from __future__ import unicode_literals
 import os
 import time
 
-import colorclass
 import requests
 import six
+from colorama import Fore, Style, init as init_colorama
 
 from .cache import CacheWrapper, DictCache
 from .utils import formats, run_from_ipython, Bunch, bunchify
 
 
 debug_messages = {
-    'request': (
-        '{blue}Executing {method} request:{/blue}\n'
-        '{hiblack}'
-        '    URL:     {url}\n'
-        '    headers: {headers}\n'
-        '    query:   {params}\n'
-        '    data:    {data}\n'
-        '{/hiblack}'
-    ),
-    'success_response': (
-        '{green}Got {status_code} {reason}:{/green}\n'
-        '{hiblack}'
-        '    {text}\n'
-        '{/hiblack}'
-    ),
-    'failure_response': (
-        '{red}Got {status_code} {reason}:{/red}\n'
-        '{hiblack}'
-        '    {text}\n'
-        '{/hiblack}'
-    ),
-    'cached_response': (
-        '{cyan}Cached response:{/cyan}\n'
-        '{hiblack}'
-        '    {text}\n'
-        '{/hiblack}'
-    ),
-    'incorrect_format_response': (
-        '{red}Got {status_code} {reason} (not {format}):{/red}\n'
-        '{hiblack}'
-        '    {text}\n'
-        '{/hiblack}'
-    )
+    'request': ''.join([
+        Fore.BLUE, 'Executing {method} request:\n',
+        Fore.BLACK, Style.BRIGHT,
+        '    URL:     {url}\n',
+        '    headers: {headers}\n',
+        '    query:   {params}\n',
+        '    data:    {data}\n',
+        Style.RESET_ALL
+    ]),
+    'success_response': ''.join([
+        Fore.GREEN, 'Got {status_code} {reason}:\n',
+        Fore.BLACK, Style.BRIGHT,
+        '    {text}\n',
+        Style.RESET_ALL
+    ]),
+    'failure_response': ''.join([
+        Fore.RED, 'Got {status_code} {reason}:\n',
+        Fore.BLACK, Style.BRIGHT,
+        '    {text}\n',
+        Style.RESET_ALL
+    ]),
+    'cached_response': ''.join([
+        Fore.CYAN, 'Cached response:\n',
+        Fore.BLACK, Style.BRIGHT,
+        '    {text}\n',
+        Style.RESET_ALL
+    ]),
+    'incorrect_format_response': ''.join([
+        Fore.RED, 'Got {status_code} {reason} (not {format}):\n',
+        Fore.BLACK, Style.BRIGHT,
+        '    {text}\n',
+        Style.RESET_ALL
+    ])
 }
 
 
 DEBUG_MAX_TEXT_LENGTH = 100
 
 
-if os.name == 'nt':
-    if run_from_ipython():
-        # IPython stops working properly when it loses control of
-        # `stdout` on Windows. In this case we won't enable Windows
-        # color support and we'll strip out all colors from the debug
-        # messages.
-        colorclass.disable_all_colors()
-    else:
-        colorclass.Windows.enable()
+if os.name == 'nt' and run_from_ipython():
+    # IPython stops working properly when it loses control of
+    # `stdout` on Windows. In this case we won't enable Windows
+    # color support and we'll strip out all colors from the debug
+    # messages.
+    init_colorama(wrap=False)
+else:
+    init_colorama()
 
 
 class Client(object):
@@ -76,8 +75,8 @@ class Client(object):
         self._last_request_time = None
 
     def _log(self, message, debug=None, **kwargs):
-        """Outputs a colored and formatted message in the console
-        if the debug mode is activated.
+        """Outputs a formatted message in the console if the
+        debug mode is activated.
 
         :param message: the message that will be printed
         :param debug: (optional) Overwrite of `Client.debug`
@@ -88,8 +87,7 @@ class Client(object):
         if debug is not None:
             display_log = debug
         if display_log:
-            colored_message = colorclass.Color(message)
-            print(colored_message.format(**kwargs))
+            print(message.format(**kwargs))
 
     def request(self, method, url, path=(), extension=None, suffix=None,
                 params=None, headers=None, data=None, debug=None,
