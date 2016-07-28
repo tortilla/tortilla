@@ -11,7 +11,7 @@ Tortilla
     :target: https://coveralls.io/r/redodo/tortilla
     :alt: Coverage
 .. |Docs| image:: https://readthedocs.org/projects/tortilla/badge/?version=latest&style=flat
-    :target: https://tortilla.readthedocs.org/latest/
+    :target: https://tortilla.readthedocs.org/en/latest/
     :alt: Docs
 .. |Version| image:: https://img.shields.io/pypi/v/tortilla.svg?style=flat
     :target: https://pypi.python.org/pypi/tortilla
