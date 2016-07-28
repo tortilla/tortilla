@@ -83,22 +83,22 @@ class TestTortilla(unittest.TestCase):
     #
     def assertIs(self, expr1, expr2, msg=None):
         if expr1 is not expr2:
-            standard_msg = '%s is not %s' % (repr(expr1), repr(expr2))
+            standard_msg = '%r is not %r' % (expr1, expr2)
             self.fail(self._formatMessage(msg, standard_msg))
 
     def assertIsNot(self, expr1, expr2, msg=None):
         if expr1 is expr2:
-            standard_msg = 'unexpectedly identical: %s' % (repr(expr1),)
+            standard_msg = 'unexpectedly identical: %r' % (expr1,)
             self.fail(self._formatMessage(msg, standard_msg))
 
     def assertGreaterEqual(self, a, b, msg=None):
         if not a >= b:
-            standard_msg = '%s not greater than or equal to %s' % (repr(a), repr(b))
+            standard_msg = '%r not greater than or equal to %r' % (a, b)
             self.fail(self._formatMessage(msg, standard_msg))
 
     def assertIsInstance(self, obj, cls, msg=None):
         if not isinstance(obj, cls):
-            standard_msg = '%s is not an instance of %r' % (repr(obj), cls)
+            standard_msg = '%r is not an instance of %r' % (obj, cls)
             self.fail(self._formatMessage(msg, standard_msg))
     # /Python 2.6
 
