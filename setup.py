@@ -36,9 +36,10 @@ setup(
     keywords='api wrapper',
     packages=['tortilla'],
     install_requires=[
-        'colorclass',
+        'colorama',
         'requests',
         'formats',
         'six',
+        'httpretty'
     ],
 )
