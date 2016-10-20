@@ -91,7 +91,7 @@ class Client(object):
 
     def request(self, method, url, path=(), extension=None, suffix=None,
                 params=None, headers=None, data=None, debug=None,
-                cache_lifetime=None, silent=False, ignore_cache=False,
+                cache_lifetime=None, silent=None, ignore_cache=False,
                 format='json', delay=0.0, **kwargs):
         """Requests a URL and returns a *Bunched* response.
 
@@ -245,7 +245,7 @@ class Wrap(object):
     """
 
     def __init__(self, part, parent=None, headers=None, params=None,
-                 debug=None, cache_lifetime=None, silent=False,
+                 debug=None, cache_lifetime=None, silent=None,
                  extension=None, suffix=None, format=None, cache=None,
                  delay=None):
         if not hasattr(part, "encode"):
