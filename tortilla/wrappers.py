@@ -12,6 +12,12 @@ from colorama import Fore, Style, init as init_colorama
 from .cache import CacheWrapper, DictCache
 from .utils import formats, run_from_ipython, Bunch, bunchify
 
+try:
+    import OpenSSL
+    ConnectionError = OpenSSL.SSL.SysCallError
+except ImportError:
+    ConnectionError = requests.exceptions.ConnectionError
+
 
 debug_messages = {
     'request': ''.join([
@@ -88,6 +94,16 @@ class Client(object):
             display_log = debug
         if display_log:
             print(message.format(**kwargs))
+
+    def send_request(self, *args, **kwargs):
+        """Wrapper for session.request
+        Handle connection reset error even from pyopenssl
+        """
+        try:
+            return self.session.request(*args, **kwargs)
+        except ConnectionError:
+            self.session.close()
+            return self.session.request(*args, **kwargs)
 
     def request(self, method, url, path=(), extension=None, suffix=None,
                 params=None, headers=None, data=None, debug=None,
@@ -187,8 +203,8 @@ class Client(object):
                 time.sleep(delay - elapsed)
 
         # execute the request
-        r = self.session.request(method, url, params=params,
-                                 headers=request_headers, data=data, **kwargs)
+        r = self.send_request(method, url, params=params,
+                              headers=request_headers, data=data, **kwargs)
         self._last_request_time = time.time()
 
         # when not silent, raise an exception for any status code >= 400
