@@ -72,13 +72,14 @@ else:
 class Client(object):
     """Wrapper around the most basic methods of the requests library."""
 
-    def __init__(self, debug=False, cache=None):
+    def __init__(self, debug=False, cache=None, **kwargs):
         self.headers = Bunch()
         self.debug = debug
         self.cache = cache if cache else DictCache()
         self.cache = CacheWrapper(self.cache)
         self.session = requests.session()
         self._last_request_time = None
+        self.defaults = kwargs
 
     def _log(self, message, debug=None, **kwargs):
         """Outputs a formatted message in the console if the
@@ -202,6 +203,10 @@ class Client(object):
             if elapsed < delay:
                 time.sleep(delay - elapsed)
 
+        # use default request parameters
+        for name, value in self.defaults.items():
+            kwargs.setdefault(name, value)
+
         # execute the request
         r = self.send_request(method, url, params=params,
                               headers=request_headers, data=data, **kwargs)
@@ -263,12 +268,12 @@ class Wrap(object):
     def __init__(self, part, parent=None, headers=None, params=None,
                  debug=None, cache_lifetime=None, silent=None,
                  extension=None, suffix=None, format=None, cache=None,
-                 delay=None):
+                 delay=None, **kwargs):
         if not hasattr(part, "encode"):
             part = str(part)
         self._part = part[:-1] if part[-1:] == '/' else part
         self._url = None
-        self._parent = parent or Client(debug=debug, cache=cache)
+        self._parent = parent or Client(debug=debug, cache=cache, **kwargs)
         self.config = Bunch({
             'headers': bunchify(headers) if headers else Bunch(),
             'params': bunchify(params) if params else Bunch(),
