@@ -206,6 +206,16 @@ class TestTortilla(unittest.TestCase):
         self.assertEqual(getattr(__builtins__, "__IPYTHON__", False),
                          run_from_ipython())
 
+    def test_config_endpoint(self):
+        self.assertEqual(
+            self.api('config').get(),
+            self.endpoints['/config']['body'],
+        )
+        self.assertEqual(
+            self.api.get('config'),
+            self.endpoints['/config']['body'],
+        )
+
 
 if __name__ == '__main__':
     unittest.main()

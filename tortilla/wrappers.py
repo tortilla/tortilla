@@ -285,6 +285,7 @@ class Wrap(object):
             'format': format,
             'delay': delay,
         })
+        self._children = {}
 
     def url(self):
         if self._url:
@@ -326,25 +327,23 @@ class Wrap(object):
 
         parent = self
         for part in parts:
-            # check if a wrap is already created for the part
-            try:
-                # the next part in this loop will have this wrap as
-                # its parent
-                parent = parent.__dict__[part]
-            except KeyError:
-                # create a wrap for the part
-                parent.__dict__[part] = Wrap(part=part, parent=parent)
-                parent = parent.__dict__[part]
+            parent = parent._get_or_create_child_wrap(part)
 
         return parent
 
     def __getattr__(self, part):
-        try:
+        if part in self.__dict__:
             return self.__dict__[part]
-        except KeyError:
-            self.__dict__[part] = Wrap(part=part, parent=self,
-                                       debug=self.config.get('debug'))
-            return self.__dict__[part]
+        return self._get_or_create_child_wrap(part)
+
+    def _get_or_create_child_wrap(self, name):
+        if name not in self._children:
+            self._children[name] = Wrap(
+                part=name,
+                parent=self,
+                debug=self.config.get('debug'),
+            )
+        return self._children[name]
 
     def request(self, method, *parts, **options):
         """Requests a URL and returns a *Bunched* response.

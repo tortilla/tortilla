@@ -1,5 +1,8 @@
 {
   "endpoints": {
+    "/config": {
+      "body": {"param": "value"}
+    },
     "/test": {
       "body": {"message": "Regular endpoint."}
     },
