@@ -4,11 +4,11 @@ Tortilla
 
 |Build Status| |Coverage| |Docs| |Version| |License|
 
-.. |Build Status| image:: https://img.shields.io/travis/redodo/tortilla.svg?style=flat
-    :target: https://travis-ci.org/redodo/tortilla
+.. |Build Status| image:: https://img.shields.io/travis/tortilla/tortilla.svg?style=flat
+    :target: https://travis-ci.org/tortilla/tortilla
     :alt: Build Status
-.. |Coverage| image:: https://img.shields.io/coveralls/redodo/tortilla.svg?style=flat
-    :target: https://coveralls.io/r/redodo/tortilla
+.. |Coverage| image:: https://img.shields.io/coveralls/tortilla/tortilla.svg?style=flat
+    :target: https://coveralls.io/r/tortilla/tortilla
     :alt: Coverage
 .. |Docs| image:: https://readthedocs.org/projects/tortilla/badge/?version=latest&style=flat
     :target: https://tortilla.readthedocs.org/en/latest/
@@ -17,7 +17,7 @@ Tortilla
     :target: https://pypi.python.org/pypi/tortilla
     :alt: Version
 .. |License| image:: https://img.shields.io/pypi/l/tortilla.svg?style=flat
-    :target: https://github.com/redodo/tortilla/blob/master/LICENSE
+    :target: https://github.com/tortilla/tortilla/blob/master/LICENSE
     :alt: License
 
 
