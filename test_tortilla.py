@@ -15,7 +15,7 @@ import tortilla
 from tortilla.utils import bunchify, Bunch, run_from_ipython
 
 
-API_URL = 'https://test.tortilla.locally'
+API_URL = 'http://test.tortilla.locally'
 
 
 def monkey_patch_httpretty():
