@@ -16,7 +16,7 @@ setup(
     version='0.4.3',
     description='A tiny library for creating wrappers around web APIs',
     long_description=long_description,
-    url='https://github.com/redodo/tortilla',
+    url='https://github.com/tortilla/tortilla',
     author='Hidde Bultsma',
     author_email='me@redodo.io',
     license='MIT',
