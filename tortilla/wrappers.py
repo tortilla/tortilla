@@ -9,6 +9,7 @@ import requests
 import six
 from colorama import Fore, Style, init as init_colorama
 
+from . import formatters
 from .cache import CacheWrapper, DictCache
 from .utils import formats, run_from_ipython, Bunch, bunchify
 
@@ -111,7 +112,7 @@ class Client(object):
     def request(self, method, url, path=(), extension=None, suffix=None,
                 params=None, headers=None, data=None, debug=None,
                 cache_lifetime=None, silent=None, ignore_cache=False,
-                format='json', delay=0.0, **kwargs):
+                format='json', delay=0.0, formatter=None, **kwargs):
         """Requests a URL and returns a *Bunched* response.
 
         This method basically wraps the request method of the requests
@@ -272,12 +273,22 @@ class Wrap(object):
     def __init__(self, part, parent=None, headers=None, params=None,
                  debug=None, cache_lifetime=None, silent=None,
                  extension=None, suffix=None, format=None, cache=None,
-                 delay=None, **kwargs):
+                 delay=None, hyphenate=False, mixedcase=False, camelcase=False,
+                 formatter=None, **kwargs):
         if not hasattr(part, "encode"):
             part = str(part)
         self._part = part[:-1] if part[-1:] == '/' else part
         self._url = None
         self._parent = parent or Client(debug=debug, cache=cache, **kwargs)
+
+        if formatter is None:
+            if hyphenate:
+                formatter = formatters.hyphenate
+            elif mixedcase:
+                formatter = formatters.mixedcase
+            elif camelcase:
+                formatter = formatters.camelcase
+
         self.config = Bunch({
             'headers': bunchify(headers) if headers else Bunch(),
             'params': bunchify(params) if params else Bunch(),
@@ -288,6 +299,7 @@ class Wrap(object):
             'suffix': suffix,
             'format': format,
             'delay': delay,
+            'formatter': formatter,
         })
         self._children = {}
 
@@ -338,6 +350,10 @@ class Wrap(object):
     def __getattr__(self, part):
         if part in self.__dict__:
             return self.__dict__[part]
+
+        if self.config.formatter:
+            part = self.config.formatter(part)
+
         return self._get_or_create_child_wrap(part)
 
     def _get_or_create_child_wrap(self, name):

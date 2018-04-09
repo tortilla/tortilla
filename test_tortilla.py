@@ -12,6 +12,7 @@ import httpretty
 from requests.exceptions import HTTPError
 
 import tortilla
+from tortilla.formatters import hyphenate, mixedcase, camelcase
 from tortilla.utils import bunchify, Bunch, run_from_ipython
 
 
@@ -214,6 +215,29 @@ class TestTortilla(unittest.TestCase):
         self.assertEqual(
             self.api.get('config'),
             self.endpoints['/config']['body'],
+        )
+
+    def test_formatters(self):
+        self.assertEqual('hyphenated-endpoint', hyphenate('hyphenated_endpoint'))
+        self.assertEqual('mixedCasedEndpoint', mixedcase('mixed_cased_endpoint'))
+        self.assertEqual('CamelCasedEndpoint', camelcase('camel_cased_endpoint'))
+
+        self.api.config.formatter = hyphenate
+        self.assertEqual(
+            self.api.hyphenated_endpoint.get(),
+            self.endpoints['/hyphenated-endpoint']['body'],
+        )
+
+        self.api.config.formatter = mixedcase
+        self.assertEqual(
+            self.api.mixed_cased_endpoint.get(),
+            self.endpoints['/mixedCasedEndpoint']['body'],
+        )
+
+        self.api.config.formatter = camelcase
+        self.assertEqual(
+            self.api.camel_cased_endpoint.get(),
+            self.endpoints['/CamelCasedEndpoint']['body'],
         )
 
 

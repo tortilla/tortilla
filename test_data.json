@@ -49,6 +49,15 @@
     },
     "/extension/hello.json": {
       "body": {"message": "Success!"}
+    },
+    "/hyphenated-endpoint": {
+      "body": {"message": "Success!"}
+    },
+    "/mixedCasedEndpoint": {
+      "body": {"message": "Success!"}
+    },
+    "/CamelCasedEndpoint": {
+      "body": {"message": "Success!"}
     }
   }
 }

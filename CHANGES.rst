@@ -6,6 +6,9 @@ Version 0.5.0
 
 Unreleased.
 
+- Hyphenated, mixedCased, and CamelCased endpoints can be more easily
+  requested using the `hyphenate`, `mixedcase`, and `camelcase` option
+  (`#44`_, `#10`_)
 - Retry request when catching a connection reset error (`#40`_)
 - It is now possible to request endpoints that collide with `Wrap`
   attributes such as `config` (See discussion in `#38`_)
@@ -13,9 +16,11 @@ Unreleased.
   requests package, enabling many new features such as HTTPBasicAuth
   (`#37`_)
 
+.. _#44: https://github.com/tortilla/tortilla/issues/44
 .. _#40: https://github.com/tortilla/tortilla/pull/40
 .. _#38: https://github.com/tortilla/tortilla/pull/38
 .. _#37: https://github.com/tortilla/tortilla/pull/37
+.. _#10: https://github.com/tortilla/tortilla/issues/10
 
 Version 0.4.3
 -------------
