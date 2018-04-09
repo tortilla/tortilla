@@ -1,52 +1,59 @@
 # -*- coding: utf-8 -*-
 
+from __future__ import unicode_literals
+
 import os
 import time
 
-import colorclass
 import requests
 import six
+from colorama import Fore, Style, init as init_colorama
 
 from .cache import CacheWrapper, DictCache
-from .compat import string_type
 from .utils import formats, run_from_ipython, Bunch, bunchify
+
+try:
+    import OpenSSL
+    ConnectionError = OpenSSL.SSL.SysCallError
+except ImportError:
+    ConnectionError = requests.exceptions.ConnectionError
 
 
 #: Dictionary of colored debug messages used in the `~Client._log` method
 debug_messages = {
-    'request': (
-        '{blue}Executing {method} request:{/blue}\n'
-        '{hiblack}'
-        '    URL:     {url}\n'
-        '    headers: {headers}\n'
-        '    query:   {params}\n'
-        '    data:    {data}\n'
-        '{/hiblack}'
-    ),
-    'success_response': (
-        '{green}Got {status_code} {reason}:{/green}\n'
-        '{hiblack}'
-        '    {text}\n'
-        '{/hiblack}'
-    ),
-    'failure_response': (
-        '{red}Got {status_code} {reason}:{/red}\n'
-        '{hiblack}'
-        '    {text}\n'
-        '{/hiblack}'
-    ),
-    'cached_response': (
-        '{cyan}Cached response:{/cyan}\n'
-        '{hiblack}'
-        '    {text}\n'
-        '{/hiblack}'
-    ),
-    'incorrect_format_response': (
-        '{red}Got {status_code} {reason} (not {format}):{/red}\n'
-        '{hiblack}'
-        '    {text}\n'
-        '{/hiblack}'
-    )
+    'request': ''.join([
+        Fore.BLUE, 'Executing {method} request:\n',
+        Fore.BLACK, Style.BRIGHT,
+        '    URL:     {url}\n',
+        '    headers: {headers}\n',
+        '    query:   {params}\n',
+        '    data:    {data}\n',
+        Style.RESET_ALL
+    ]),
+    'success_response': ''.join([
+        Fore.GREEN, 'Got {status_code} {reason}:\n',
+        Fore.BLACK, Style.BRIGHT,
+        '    {text}\n',
+        Style.RESET_ALL
+    ]),
+    'failure_response': ''.join([
+        Fore.RED, 'Got {status_code} {reason}:\n',
+        Fore.BLACK, Style.BRIGHT,
+        '    {text}\n',
+        Style.RESET_ALL
+    ]),
+    'cached_response': ''.join([
+        Fore.CYAN, 'Cached response:\n',
+        Fore.BLACK, Style.BRIGHT,
+        '    {text}\n',
+        Style.RESET_ALL
+    ]),
+    'incorrect_format_response': ''.join([
+        Fore.RED, 'Got {status_code} {reason} (not {format}):\n',
+        Fore.BLACK, Style.BRIGHT,
+        '    {text}\n',
+        Style.RESET_ALL
+    ])
 }
 
 
@@ -54,6 +61,7 @@ debug_messages = {
 DEBUG_MAX_TEXT_LENGTH = 100
 
 
+<<<<<<< HEAD
 if os.name == 'nt':
     if run_from_ipython():
         # IPython stops working properly when it loses control of
@@ -64,22 +72,33 @@ if os.name == 'nt':
     else:
         # Color support for Windows has to be explicitly enabled.
         colorclass.Windows.enable()
+=======
+if os.name == 'nt' and run_from_ipython():
+    # IPython stops working properly when it loses control of
+    # `stdout` on Windows. In this case we won't enable Windows
+    # color support and we'll strip out all colors from the debug
+    # messages.
+    init_colorama(wrap=False)
+else:
+    init_colorama()
+>>>>>>> master
 
 
 class Client(object):
     """Wrapper around the most basic methods of the requests library."""
 
-    def __init__(self, debug=False, cache=None):
+    def __init__(self, debug=False, cache=None, **kwargs):
         self.headers = Bunch()
         self.debug = debug
         self.cache = cache if cache else DictCache()
         self.cache = CacheWrapper(self.cache)
         self.session = requests.session()
         self._last_request_time = None
+        self.defaults = kwargs
 
     def _log(self, message, debug=None, **kwargs):
-        """Outputs a colored and formatted message in the console
-        if the debug mode is activated.
+        """Outputs a formatted message in the console if the
+        debug mode is activated.
 
         :param message: The message that will be printed
         :param debug: (optional) Overwrite of `Client.debug`
@@ -90,13 +109,22 @@ class Client(object):
         if debug is not None:
             display_log = debug
         if display_log:
-            colored_message = colorclass.Color(message)
-            print((colored_message.format(**kwargs)))
+            print(message.format(**kwargs))
 
-    def request(self, method, url, path=(), extension=None, params=None,
-                headers=None, data=None, debug=None, cache_lifetime=None,
-                silent=False, ignore_cache=False, format='json', delay=0.0,
-                **kwargs):
+    def send_request(self, *args, **kwargs):
+        """Wrapper for session.request
+        Handle connection reset error even from pyopenssl
+        """
+        try:
+            return self.session.request(*args, **kwargs)
+        except ConnectionError:
+            self.session.close()
+            return self.session.request(*args, **kwargs)
+
+    def request(self, method, url, path=(), extension=None, suffix=None,
+                params=None, headers=None, data=None, debug=None,
+                cache_lifetime=None, silent=None, ignore_cache=False,
+                format='json', delay=0.0, **kwargs):
         """Requests a URL and returns a *Bunched* response.
 
         This method basically wraps the request method of the requests
@@ -109,8 +137,14 @@ class Client(object):
         :param path: (optional) Appended to the request URL. This can be
             either a string or a list which will be joined
             by forward slashes.
+<<<<<<< HEAD
         :param extension: (optional) The extension to append to the URL
         :param params: (optional) The URL query parameters.
+=======
+        :param extension: (optional) The extension to append to the URL.
+        :param suffix: (optional) Append stuff like trailing slashes the URL.
+        :param params: (optional) The URL query parameters
+>>>>>>> master
         :param headers: (optional) Extra headers to sent with the request.
             Existing header keys can be overwritten.
         :param data: (optional) Dictionary
@@ -157,13 +191,15 @@ class Client(object):
             data = formats.compose(request_format, data)
 
         # form the URL
-        if not isinstance(path, string_type):
+        if not hasattr(path, "encode"):
             path = '/'.join(path)
         if extension is None:
             extension = ''
         elif not extension.startswith('.'):
             extension = '.' + extension
-        url = '%s%s%s' % (url, path, extension)
+        if suffix is None:
+            suffix = ''
+        url = '%s%s%s%s' % (url, path, extension, suffix)
 
         # log a debug message about the request
         self._log(debug_messages['request'], debug, method=method.upper(),
@@ -178,13 +214,21 @@ class Client(object):
 
         # delay the request if needed
         if delay > 0:
-            elapsed = time.time() - self._last_request_time
+            t = time.time()
+            if self._last_request_time is None:
+                self._last_request_time = t
+
+            elapsed = t - self._last_request_time
             if elapsed < delay:
                 time.sleep(delay - elapsed)
 
+        # use default request parameters
+        for name, value in self.defaults.items():
+            kwargs.setdefault(name, value)
+
         # execute the request
-        r = self.session.request(method, url, params=params,
-                                 headers=request_headers, data=data, **kwargs)
+        r = self.send_request(method, url, params=params,
+                              headers=request_headers, data=data, **kwargs)
         self._last_request_time = time.time()
 
         # when not silent, raise an exception for any HTTP status code >= 400
@@ -244,15 +288,14 @@ class Wrap(object):
     """
 
     def __init__(self, part, parent=None, headers=None, params=None,
-                 debug=None, cache_lifetime=None, silent=False,
-                 extension=None, format=None, cache=None, delay=None):
-        if isinstance(part, string_type):
-            # trailing slashes are removed
-            self._part = part[:-1] if part[-1:] == '/' else part
-        else:
-            self._part = str(part)
+                 debug=None, cache_lifetime=None, silent=None,
+                 extension=None, suffix=None, format=None, cache=None,
+                 delay=None, **kwargs):
+        if not hasattr(part, "encode"):
+            part = str(part)
+        self._part = part[:-1] if part[-1:] == '/' else part
         self._url = None
-        self._parent = parent or Client(debug=debug, cache=cache)
+        self._parent = parent or Client(debug=debug, cache=cache, **kwargs)
         self.config = Bunch({
             'headers': bunchify(headers) if headers else Bunch(),
             'params': bunchify(params) if params else Bunch(),
@@ -260,9 +303,11 @@ class Wrap(object):
             'cache_lifetime': cache_lifetime,
             'silent': silent,
             'extension': extension,
+            'suffix': suffix,
             'format': format,
             'delay': delay,
         })
+        self._children = {}
 
     def url(self):
         if self._url:
@@ -304,25 +349,23 @@ class Wrap(object):
 
         parent = self
         for part in parts:
-            # check if a wrap is already created for the part
-            try:
-                # the next part in this loop will have this wrap as
-                # its parent
-                parent = parent.__dict__[part]
-            except KeyError:
-                # create a wrap for the part
-                parent.__dict__[part] = Wrap(part=part, parent=parent)
-                parent = parent.__dict__[part]
+            parent = parent._get_or_create_child_wrap(part)
 
         return parent
 
     def __getattr__(self, part):
-        try:
+        if part in self.__dict__:
             return self.__dict__[part]
-        except KeyError:
-            self.__dict__[part] = Wrap(part=part, parent=self,
-                                       debug=self.config.get('debug'))
-            return self.__dict__[part]
+        return self._get_or_create_child_wrap(part)
+
+    def _get_or_create_child_wrap(self, name):
+        if name not in self._children:
+            self._children[name] = Wrap(
+                part=name,
+                parent=self,
+                debug=self.config.get('debug'),
+            )
+        return self._children[name]
 
     def request(self, method, *parts, **options):
         """Requests a URL and returns a *Bunched* response.

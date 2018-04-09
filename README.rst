@@ -4,32 +4,36 @@ Tortilla
 
 |Build Status| |Coverage| |Docs| |Version| |License|
 
-.. |Build Status| image:: https://img.shields.io/travis/redodo/tortilla.svg?style=flat
-    :target: https://travis-ci.org/redodo/tortilla
+.. |Build Status| image:: https://img.shields.io/travis/tortilla/tortilla.svg?style=flat
+    :target: https://travis-ci.org/tortilla/tortilla
     :alt: Build Status
-.. |Coverage| image:: https://img.shields.io/coveralls/redodo/tortilla.svg?style=flat
-    :target: https://coveralls.io/r/redodo/tortilla
+.. |Coverage| image:: https://img.shields.io/coveralls/tortilla/tortilla.svg?style=flat
+    :target: https://coveralls.io/r/tortilla/tortilla
     :alt: Coverage
 .. |Docs| image:: https://readthedocs.org/projects/tortilla/badge/?version=latest&style=flat
-    :target: https://tortilla.readthedocs.org/latest/
+    :target: https://tortilla.readthedocs.org/en/latest/
     :alt: Docs
 .. |Version| image:: https://img.shields.io/pypi/v/tortilla.svg?style=flat
     :target: https://pypi.python.org/pypi/tortilla
     :alt: Version
 .. |License| image:: https://img.shields.io/pypi/l/tortilla.svg?style=flat
-    :target: https://github.com/redodo/tortilla/blob/master/LICENSE
+    :target: https://github.com/tortilla/tortilla/blob/master/LICENSE
     :alt: License
 
 
 *Wrapping web APIs made easy.*
 
 
-Installation via PIP::
+Installation via PIP:
+
+.. code-block:: text
 
     pip install tortilla
 
 
-Quick usage overview::
+Quick usage overview:
+
+.. code-block:: python
 
     >>> import tortilla
     >>> github = tortilla.wrap('https://api.github.com')
@@ -43,13 +47,17 @@ The Basics
 
 Tortilla uses a bit of magic to wrap APIs. Whenever you get or call an
 attribute of a wrapper, the URL is appended by that attribute's name or
-method parameter. Let's say we have the following code::
+method parameter. Let's say we have the following code:
+
+.. code-block:: python
 
     id, count = 71, 20
     api = tortilla.wrap('https://api.example.org')
     api.video(id).comments.get(count)
 
-Every attribute and method call represents a part of the URL::
+Every attribute and method call represents a part of the URL:
+
+.. code-block:: text
 
     api         -> https://api.example.org
     .video      -> /video
@@ -60,7 +68,9 @@ Every attribute and method call represents a part of the URL::
 
 The last part of the chain (``.get()``) executes the request. It also
 (optionally) appends one last part to the URL. Which allows you to do
-stuff like this::
+stuff like this:
+
+.. code-block:: python
 
     api.video.get(id)
     # instead of this
@@ -77,12 +87,16 @@ Supporting more formats is on the roadmap for future Tortilla versions.
 
 The parsed response will be *bunchified* which makes dictionary keys
 accessible through attributes. So, say we get the following JSON
-response for the user 'john'::
+response for the user 'john':
+
+.. code-block:: json
 
     {"name": "John Doe"}
 
 If we request this with an already created wrapper, we can access the
-response data through attributes::
+response data through attributes:
+
+.. code-block:: python
 
     >>> user = api.users.get('john')
     >>> user.name
@@ -94,11 +108,15 @@ Headers
 
 A common requirement for accessing APIs is providing authentication
 data. This usually has to be described in the headers of each request.
-Tortilla makes it very easy for you to describe those recurring headers::
+Tortilla makes it very easy for you to describe those recurring headers:
+
+.. code-block:: python
 
     api.config.headers.token = 'secret authentication token'
 
-You can also define custom headers per request::
+You can also define custom headers per request:
+
+.. code-block:: python
 
     api.endpoint.get(headers={'this': 'that'})
 
@@ -108,7 +126,9 @@ These headers will be appended to the existing headers of the wrapper.
 Parameters
 ~~~~~~~~~~
 
-URL parameters can be defined per request in the ``params`` option::
+URL parameters can be defined per request in the ``params`` option:
+
+.. code-block:: python
 
     api.search.get(params={'q': 'search query'})
 
@@ -118,13 +138,17 @@ Caching
 
 Some APIs have a limit on the amount of requests you can make. In these
 cases, caching can be very helpful. You can activate this with the
-``cache_lifetime`` parameter::
+``cache_lifetime`` parameter:
+
+.. code-block:: python
 
     api = tortilla.wrap('https://api.example.org', cache_lifetime=100)
 
 All the requests made on this wrapper will now be cached for 100
 seconds. If you want to ignore the cache in a specific situation, you
-can use the ``ignore_cache`` parameter::
+can use the ``ignore_cache`` parameter:
+
+.. code-block:: python
 
     api.special.request.get(ignore_cache=True)
 
@@ -135,31 +159,68 @@ URL Extensions
 ~~~~~~~~~~~~~~
 
 APIs like Twitter's require an extension in the URL that specifies the
-response format. This can be defined in the ``extension`` parameter::
+response format. This can be defined in the ``extension`` parameter:
+
+.. code-block:: python
 
     api = tortilla.wrap('https://api.twitter.com/1.1', extension='json')
 
-This option can be overridden with every request or subwrap::
+This option can be overridden with every request or subwrap:
+
+.. code-block:: python
 
     api.special.endpoint.extension = 'xml'
     api.special.endpoint.get(extension='xml')
 
 
+URL Suffix
+~~~~~~~~~~
+
+Some APIs uses a trailling slash at the end of URLs like in example below:
+
+.. code-block:: text
+
+    https://api.example.org/resource/
+
+You can add the trailling slash with ``suffix="/"`` argument when wrapping
+the API or getting the URL with ``.url(suffix="/")`` method:
+
+.. code-block:: python
+
+    api = tortilla.wrap('https://api.example.org', suffix="/")
+    api.video(71).comments.url()
+
+Will return the following URL:
+
+.. code-block:: text
+
+    api         -> https://api.example.org
+    .video      -> /video
+    (id)        -> /71/
+    Final URL   -> https://api.example.org/video/71/
+
+
 Debugging
 ~~~~~~~~~
 
-Activating debug mode can be done with the ``debug`` parameter::
+Activating debug mode can be done with the ``debug`` parameter:
+
+.. code-block:: python
 
     api.debug = True
     # OR
     api = tortilla.wrap('https://api.example.org', debug=True)
 
-You can override the ``debug`` parameter per request::
+You can override the ``debug`` parameter per request:
+
+.. code-block:: python
 
     api.stuff.get(debug=False)
     api.other.stuff.get(debug=True)
 
-An example using the GitHub API::
+An example using the GitHub API:
+
+.. code-block:: python
 
     >>> user = github.users.get('octocat')
     Executing GET request:
