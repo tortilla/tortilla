@@ -61,18 +61,6 @@ debug_messages = {
 DEBUG_MAX_TEXT_LENGTH = 100
 
 
-<<<<<<< HEAD
-if os.name == 'nt':
-    if run_from_ipython():
-        # IPython stops working properly when it loses control of
-        # `stdout` on Windows. In this case, we won't enable Windows
-        # color support and we'll strip out all colors from the debug
-        # messages.
-        colorclass.disable_all_colors()
-    else:
-        # Color support for Windows has to be explicitly enabled.
-        colorclass.Windows.enable()
-=======
 if os.name == 'nt' and run_from_ipython():
     # IPython stops working properly when it loses control of
     # `stdout` on Windows. In this case we won't enable Windows
@@ -81,7 +69,6 @@ if os.name == 'nt' and run_from_ipython():
     init_colorama(wrap=False)
 else:
     init_colorama()
->>>>>>> master
 
 
 class Client(object):
@@ -137,14 +124,9 @@ class Client(object):
         :param path: (optional) Appended to the request URL. This can be
             either a string or a list which will be joined
             by forward slashes.
-<<<<<<< HEAD
-        :param extension: (optional) The extension to append to the URL
-        :param params: (optional) The URL query parameters.
-=======
         :param extension: (optional) The extension to append to the URL.
         :param suffix: (optional) Append stuff like trailing slashes the URL.
         :param params: (optional) The URL query parameters
->>>>>>> master
         :param headers: (optional) Extra headers to sent with the request.
             Existing header keys can be overwritten.
         :param data: (optional) Dictionary
