@@ -13,8 +13,8 @@ with open(path.join(here, 'README.rst'), encoding='utf-8') as f:
 
 setup(
     name='tortilla',
-    version='0.4.3',
-    description='A tiny library for creating wrappers around web APIs',
+    version='0.5.0',
+    description='Wrapping web APIs made easy.',
     long_description=long_description,
     url='https://github.com/tortilla/tortilla',
     author='Hidde Bultsma',
@@ -41,6 +41,6 @@ setup(
         'requests',
         'formats',
         'six',
-        'httpretty'
+        'httpretty',
     ],
 )

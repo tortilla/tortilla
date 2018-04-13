@@ -4,7 +4,7 @@ Tortilla Changelog
 Version 0.5.0
 -------------
 
-Unreleased.
+Released on April 13th 2018.
 
 - Hyphenated, mixedCased, and CamelCased endpoints can be more easily
   requested using the `hyphenate`, `mixedcase`, and `camelcase` option
