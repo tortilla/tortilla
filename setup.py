@@ -32,15 +32,23 @@ setup(
         'Programming Language :: Python :: 3.4',
         'Programming Language :: Python :: 3.5',
         'Programming Language :: Python :: 3.6',
+        'Programming Language :: Python :: Implementation :: PyPy',
         'Topic :: Internet',
     ],
     keywords='api wrapper',
     packages=['tortilla'],
     install_requires=[
-        'colorama',
-        'requests',
+        'colorama>=0.3.6',
+        'requests>=2.0',
+        'six>=1.4',
         'formats',
-        'six',
-        'httpretty',
     ],
+    extras_require={
+        'dev': [
+            'pytest>=3',
+            'httpretty',
+            'coverage',
+            'tox',
+        ],
+    },
 )

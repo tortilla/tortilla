@@ -2,23 +2,25 @@ Tortilla
 ========
 
 
-|Build Status| |Coverage| |Docs| |Version| |License|
+|build| |coverage| |docs| |version| |pyversions| |license|
 
-.. |Build Status| image:: https://img.shields.io/travis/tortilla/tortilla.svg?style=flat
+.. |build| image:: https://img.shields.io/travis/tortilla/tortilla.svg
     :target: https://travis-ci.org/tortilla/tortilla
-    :alt: Build Status
-.. |Coverage| image:: https://img.shields.io/coveralls/tortilla/tortilla.svg?style=flat
-    :target: https://coveralls.io/r/tortilla/tortilla
-    :alt: Coverage
-.. |Docs| image:: https://readthedocs.org/projects/tortilla/badge/?version=latest&style=flat
+
+.. |coverage| image:: https://img.shields.io/codecov/c/github/tortilla/tortilla.svg
+    :target: https://codecov.io/gh/tortilla/tortilla
+
+.. |docs| image:: https://readthedocs.org/projects/tortilla/badge/?version=latest
     :target: https://tortilla.readthedocs.org/en/latest/
-    :alt: Docs
-.. |Version| image:: https://img.shields.io/pypi/v/tortilla.svg?style=flat
-    :target: https://pypi.python.org/pypi/tortilla
-    :alt: Version
-.. |License| image:: https://img.shields.io/pypi/l/tortilla.svg?style=flat
+
+.. |version| image:: https://img.shields.io/pypi/v/tortilla.svg
+    :target: https://pypi.org/project/tortilla
+
+.. |pyversions| image:: https://img.shields.io/pypi/pyversions/tortilla.svg
+    :target: https://pypi.org/project/tortilla
+
+.. |license| image:: https://img.shields.io/github/license/tortilla/tortilla.svg
     :target: https://github.com/tortilla/tortilla/blob/master/LICENSE
-    :alt: License
 
 
 *Wrapping web APIs made easy.*
@@ -39,7 +41,7 @@ Quick usage overview:
     >>> github = tortilla.wrap('https://api.github.com')
     >>> user = github.users.get('octocat')
     >>> user.location
-    u'San Francisco'
+    'San Francisco'
 
 
 The Basics
@@ -100,7 +102,7 @@ response data through attributes:
 
     >>> user = api.users.get('john')
     >>> user.name
-    u'John Doe'
+    'John Doe'
 
 
 Headers

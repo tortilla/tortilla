@@ -15,19 +15,19 @@
     "/user/имя": {
       "body": {"age": 9, "name": "имя", "interest": "Vodka"}
     },
-    "/awesome/tweet": {
+    "/post_endpoint": {
       "method": "POST",
       "body": {"message": "Success!"}
     },
-    "/cash/money": {
+    "/put_endpoint": {
       "method": "PUT",
       "body": {"message": "Success!"}
     },
-    "/windows/ssh": {
+    "/patch_endpoint": {
       "method": "PATCH",
       "body": {"message": "Success!"}
     },
-    "/world/hunger": {
+    "/delete_endpoint": {
       "method": "DELETE",
       "body": {"message": "Success!"}
     },
@@ -35,7 +35,7 @@
       "method": "GET",
       "body": {"self": "me"}
     },
-    "/another/test": {
+    "/head_endpoint": {
       "method": "HEAD",
       "body": ""
     },
