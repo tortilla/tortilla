@@ -358,7 +358,7 @@ class Wrap(object):
 
     def _get_or_create_child_wrap(self, name):
         if name not in self._children:
-            self._children[name] = Wrap(
+            self._children[name] = self.__class__(
                 part=name,
                 parent=self,
                 debug=self.config.get('debug'),
