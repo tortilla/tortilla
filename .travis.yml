@@ -15,7 +15,7 @@ matrix:
           env: TOXENV=py,codecov
         - python: 2.7
           env: TOXENV=py,lowest,codecov
-        - python: pypy
+        - python: pypy3.5
           env: TOXENV=py,lowest,codecov
 
 install:
